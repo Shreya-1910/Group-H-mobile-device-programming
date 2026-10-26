@@ -1,3 +1,22 @@
+### R1 Non-functional requirements
+
+* R1 NFR1 (Usability): A club organiser creates and submits a complete event within 3 minutes without help, with at least 9 of 10 test participants succeeding. Every invalid field shows its error next to the field (R1-S1).
+* R1 NFR2 (Security): Automated security-rule tests show 0 successful club writes to status, points, time or capacity after submission (R1-S7). 100% of approvals, rejections and expiries create an audit entry with actor, old and new status, reason and time, kept for 2 years (R6-S20).
+* R1 NFR3 (Performance): When online, a decision made in the admin tool appears in the club's status list within 5 seconds on 95% of decisions. An event still Pending at its start time is marked Expired within 5 minutes (R1-S8).
+
+### R2 Non-functional requirements
+
+* R2 NFR1 (Usability): A first-time student finds and books a named event within 60 seconds without help, with at least 9 of 10 test participants succeeding.
+* R2 NFR2 (Performance): The first page of the Marketplace (20 of 200 approved events) loads within 2 seconds on 95% of loads, and search or filter results appear within 1 second. Both are measured on an Android 10 emulator with a Pixel 2 profile and the LTE network profile. Offline, the saved list appears within 1 second (R2-S9).
+* R2 NFR3 (Reliability): 100 simultaneous booking requests for 10 places, run in the Firebase Emulator Suite, give exactly 10 bookings and 90 waitlist offers, with 0 overbookings across 20 test runs (R2-S6).
+
+### R3 Non-functional requirements
+
+* R3 NFR1 (Performance): The QR code redraws within 0.5 seconds of each 15-second change. A student's phone decodes it within 1 second from 1 m in normal room light, on 95% of scans, measured on one real mid-range phone. Online result time and peak load follow R4 NFR1.
+* R3 NFR2 (Reliability): The club check-in screen runs for 3 hours with the screen on, without crashing or skipping a code counter. After the app is closed and reopened, the code display resumes within 3 seconds and continues the same counter sequence (R4-S14).
+* R3 NFR3 (Security): Automated tests show forged, expired, out-of-window and duplicate codes are rejected in 100% of test cases (R3-S7 to R3-S9). 100% of manual marks and review decisions are logged with actor, reason and time, and kept for 2 years (R6-S20).
+* R3 NFR4 (Accessibility): On all R1–R3 screens, every control has a TalkBack label and touch targets are at least 48 dp. The 6-digit code is shown at 32 sp or larger with a contrast ratio of at least 4.5:1 (WCAG 2.1 AA). TalkBack reads out the check-in result.
+
 
 ## R4 Non-functional requirements
 - **R4 NFR1 (Performance):** A scan is saved locally within 1 second on 95% of scans, measured offline on an Android 10 emulator with a Pixel 2 profile and on one real mid-range phone. The server returns a check-in result within 2 seconds (R3-S2) and accepts a peak of 300 check-ins within 2 minutes with 95% processed within 2 seconds.
