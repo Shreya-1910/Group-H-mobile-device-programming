@@ -1,3 +1,49 @@
+# Challenges and Assumptions
+
+## R1: Event Approval
+
+**Risk 1: Clubs get around the approval workflow**
+Why it matters: A mistake in the backend security rules could let a club approve its own event, raise its points or change the time after students have booked. This would undermine the whole s-CPD system.
+How we handle it: All access is denied by default and only allowed where a story needs it. Status, points, time and capacity are locked once an event is submitted (R1-S7). Every 🛡 story has an automated rule test in the Firebase Emulator Suite, and the tests run before each merge.
+
+**Risk 2: Events are not reviewed in time**
+Why it matters: Approval happens in a separate admin tool (R6-S21), which is extra work to build. If the s-CPD office is slow, a club can't advertise its event.
+How we handle it: The admin tool is kept simple: a list of pending events with Approve and Reject buttons, plus an audit log. Each event shows a 5-working-day due date, with overdue events first. An event still Pending at its start time expires automatically and the club is notified (R1-S8).
+
+## R2: Marketplace and Booking
+
+**Risk 1: An event is overbooked**
+Why it matters: If two students take the last place at once, or the waitlist books someone twice, a club could get more students than the venue holds.
+How we handle it: Each booking and cancellation runs as one server transaction, so only one request can take a place (R2-S6). We test this with 100 requests for 10 places (R2 NFR3). If automatic waitlist booking proves unreliable, we'll switch to a "place available" offer that the student accepts.
+
+**Risk 2: Server functions need a paid Firebase plan**
+Why it matters: Booking, check-in validation and event expiry use Cloud Functions, which need Firebase's paid Blaze plan.
+How we handle it: We develop and demo with the free Firebase Emulator Suite. If we deploy, a USD 1 budget alert stops unexpected charges. As a last resort, simple checks move into Firestore security rules.
+
+## R3: Secure Attendance
+
+**Risk 1: The emulator can't scan QR codes**
+Why it matters: The Pixel 2 emulator has no real camera, so the main check-in flow can't be shown during marking.
+How we handle it: The 6-digit code is built from the start and validated exactly like a scan (R3-S3), so check-in can be shown and tested on the emulator. Scanning is also tested on one real phone.
+
+**Risk 2: Signed rotating codes are new to us**
+Why it matters: The HMAC signing, the 15-second window counter and the clock rules are the hardest part of R3. If the club phone's clock is wrong, genuine students could be rejected.
+How we handle it: We build a small prototype in week 1, before any screens, using standard libraries (`javax.crypto` and ZXing). The current and previous codes are both accepted, and the club app syncs its time whenever it's online (R4-S19). If a student is still wrongly rejected, the organiser can mark them present, with an audit trail (R3-S6).
+
+**Risk 3: Copied codes can't be fully stopped offline**
+Why it matters: The server can't tell when an offline scan happened. A code sent live to an absent friend and scanned offline therefore looks genuine (R3-S7).
+How we handle it: Offline records must match the club's session log, far-away locations are flagged, and organisers see the number of scans for each code display (R3-S5). We list this as a known weakness in the security analysis rather than claiming it is solved.
+
+## Assumptions (R1–R3)
+
+- Students register with their university email, and the s-CPD office creates club accounts (R6-S10, R6-S16).
+- Clubs run check-in on their own Android phone and open the event online beforehand (R4-S14).
+- Events are in person, in Malaysia Time, and shorter than one day.
+- Points are 1–10, check-in runs from the event start to 15 min after the end, and booking closes 2 h before the start. These are placeholder values for the s-CPD office to confirm, stored as settings so they can change without a redesign.
+- Students who join a waitlist accept an automatic booking.
+- Most students' phones can scan a QR code. Those that can't use the 6-digit code, or the organiser marks the student present.
+
+
 # **R4: Online and offline**
 
 **Risk 1: Offline check-ins are lost, stuck or uploaded twice**
