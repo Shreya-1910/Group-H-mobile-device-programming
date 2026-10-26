@@ -273,7 +273,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 # R4: Online and Offline
 
-## R4 S1 — Offline check-in 
+## R4 S1 - Offline check-in 
 
 **Priority:** Must have
 
@@ -287,13 +287,11 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Exception cases**
 
 - EX1: Given I have already checked in to this event on this phone, When I scan the code again, Then I see "You have already checked in" and no second record is saved.
-- EX2: Given I have no booking and the event is not full, When I scan the code, Then the check-in is saved as "Needs review: no booking" (see R4 S7).
+- EX2: Given I have no booking and the event is not full, When I scan the code, Then the check-in is saved as "Needs review: no booking".
 - EX3: Given my phone storage is full, When I scan, Then the behaviour in R4 S24 applies.
 - EX4: Given the app has never been opened online on this phone, When I scan, Then I see "Connect to the internet once to set up check-in" and nothing is saved.
 
-**Quality:** Reliability, Functional suitability
-
-## R4 S2 — Automatic sync 
+## R4 S2 - Automatic sync 
 
 **Priority:** Must have
 
@@ -312,7 +310,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given battery saver or background restrictions stop the background upload, When I next open the app online, Then the upload starts within 10 seconds of opening.
 - EX4: Given my session has expired, When the upload is attempted, Then R4 S11 applies.
 
-## R4 S3 — Sync status visibility 
+## R4 S3 - Sync status visibility 
 
 **Priority:** Must have
 
@@ -331,7 +329,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given I have more than 20 check-ins, When I open "My attendance", Then they load in pages of 20, newest first, and the banner count is still correct.
 
 
-## R4 S4 — Failed sync handling 
+## R4 S4 - Failed sync handling 
 
 **Priority:** Must have
 
@@ -350,7 +348,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX4: Given the failure reason is a server error and not a rejection, When the server recovers, Then the check-in is uploaded without any action from me and without being marked Rejected.
 
 
-## R4 S5 — Late sync of an on-time scan 
+## R4 S5 - Late sync of an on-time scan 
 
 **Priority:** Must have
 
@@ -368,7 +366,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given my check-in syncs exactly at the 72-hour limit, When the server checks it, Then the server clock decides and the rule is applied the same way every time.
 
 
-## R4 S6 — Wrong or expired code 
+## R4 S6 - Wrong or expired code 
 
 **Priority:** Must have
 
@@ -389,7 +387,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX5: Given I am booked on two back-to-back events, When I scan a code of the other event, Then AC1 applies.
 
 
-## R4 S7 — Check-in without a booking 
+## R4 S7 - Check-in without a booking 
 
 **Priority:** Must have
 
@@ -408,7 +406,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given I am on a waiting list that later gets a place, When the place is confirmed after my scan, Then my record is re-checked and can become Verified without club action.
 
 
-## R4 S8 — Log out with unsynced check-ins 
+## R4 S8 - Log out with unsynced check-ins 
 
 **Priority:** Must have
 
@@ -427,7 +425,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX4: Given I log in with a different account on the same phone while records of the first account are waiting, When I log in, Then the first account's records are not visible, not uploaded under the new account and not deleted.
 
 
-## R4 S9 — Safe save if app closes 
+## R4 S9 - Safe save if app closes 
 
 **Priority:** Must have
 
@@ -443,7 +441,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the "Saved on this phone" message was shown, When the phone then loses power, Then the record is still present after restart.
 - EX3: Given a check-in record cannot be read after a crash (corrupted), When I open the app, Then I see "One check-in could not be recovered, please scan again or contact the club" and the rest of the records are unaffected.
 
-## R4 S10 — View bookings offline
+## R4 S10 - View bookings offline
 
 **Priority:** Nice to have
 
@@ -459,7 +457,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the saved data is more than 24 hours old, When it is shown, Then the notice also shows the "Last updated" time and a warning that the event may have changed.
 - EX3: Given I cancelled or the club cancelled an event while I was offline, When I reconnect, Then the list updates and I am notified of the change.
 
-## R4 S11 — Expired session while offline 
+## R4 S11 - Expired session while offline 
 
 **Priority:** Nice to have
 
@@ -477,7 +475,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given the session has been expired for more than 30 days *(assumed)*, When I scan offline, Then the scan is still saved but the record is marked for review when uploaded.
 
 
-## R4 S12 — Biometric confirmation 
+## R4 S12 - Biometric confirmation 
 
 **Priority:** Nice to have
 
@@ -494,7 +492,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I fail the fingerprint 3 times, When the phone offers PIN, Then I can use the phone PIN as the fallback.
 - EX3: Given the code expires while the biometric prompt is open, When I confirm, Then I see "Code expired, please scan again" and nothing is saved.
 
-## R4 S13 — Move to a new phone 
+## R4 S13 - Move to a new phone 
 
 **Priority:** Nice to have
 
@@ -512,7 +510,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given unsynced records are lost with the old phone, When I report this, Then the "Missing check-in claim" in R4 S25 applies.
 
 
-## R4 S14 — Organiser runs check-in offline 
+## R4 S14 - Organiser runs check-in offline 
 
 **Priority:** Must have
 
@@ -529,7 +527,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I am offline for the whole event, When I reconnect, Then the list of codes shown during the event is uploaded so the server can verify student scans (see R4 S23).
 - EX3: Given the event details were loaded more than 24 hours before the event, When I start check-in online, Then the app refreshes the event data first.
 
-## R4 S15 — Reject check-ins from people not at the event 
+## R4 S15 - Reject check-ins from people not at the event 
 
 **Priority:** Must have
 
@@ -547,7 +545,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the venue location is not set for the event, When the record is checked, Then no location check is made.
 - EX3: Given a student shares a live screenshot of the current code with a friend who is not present, When the friend scans it, Then the check-in is accepted by the code rule but the location rule in AC3 can flag it, and the organiser can review it.
 
-## R4 S16 — Phone clock cannot be used to cheat
+## R4 S16 - Phone clock cannot be used to cheat
 **Priority:** Must have
 
 **User story:** As a club organiser, I want a check-in to depend on my event's code and not on the student's phone clock, so that changing the date on a phone does not help anyone cheat.
@@ -561,7 +559,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given the phone time and the code window differ by more than 24 hours, when the record reaches the server, Then it is marked Needs review and counted towards the flagging rule.
 
-## R4 S17 — Copied or edited check-ins
+## R4 S17 - Copied or edited check-ins
 
 **Priority:** Must have
 
@@ -578,7 +576,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given the first upload succeeded but the phone never received the reply, When the phone sends the same check-in again, Then the server returns the original result and the student sees Verified or Pending, not Rejected as a duplicate.
 - EX2: Given a student checked in on two different phones, When both records arrive, Then the one from the unregistered phone is rejected.
 
-## R4 S18 — Organiser review of Needs review records 
+## R4 S18 - Organiser review of Needs review records 
 
 **Priority:** Must have
 
@@ -596,7 +594,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given I reject a record, When I confirm, Then a reason is required so the student can read it (R4 S7 AC3).
 - EX4: Given a record belongs to a student of a different club's event, When I try to open it, Then it is denied.
 
-## R4 S19 — Organiser phone clock wrong 
+## R4 S19 - Organiser phone clock wrong 
 
 **Priority:** Nice to have
 
@@ -611,7 +609,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given my phone is offline and the clock is wrong by more than 5 minutes, When I show codes, Then codes are still issued using the last known server time offset, and the records are marked for review if the offset is uncertain.
 
-## R4 S20 — Flag suspicious accounts 
+## R4 S20 - Flag suspicious accounts 
 
 **Priority:** Nice to have
 
@@ -626,7 +624,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a flagged account is cleared by an admin, When the admin saves, Then the clearance is saved with the admin name, reason and time in the audit log.
 - EX2: Given the student is flagged, When a flag is raised, Then the student's access is not blocked automatically (an admin decides).
 
-## R4 S21 — "Can't make it" works offline
+## R4 S21 - "Can't make it" works offline
 
 **Priority:** Must have
 
@@ -645,7 +643,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given the same cancellation is sent twice, When the server receives it, Then only one cancellation is made.
 - EX4: Given I am already online, When I tap "Can't make it", Then the cancellation is made immediately.
 
-## R4 S22 — Back-to-back events 
+## R4 S22 - Back-to-back events 
 
 **Priority:** Must have
 
@@ -663,7 +661,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I scan only one of two overlapping events' codes, When the records sync, Then the other event gets no attendance record.
 - EX3: Given one scan is made within the overlap of two events and the code is valid for both, When the record is made, Then the code's own event ID decides which event it counts for.
 
-## R4 S23 — Organiser decides when codes are shown 
+## R4 S23 - Organiser decides when codes are shown 
 
 **Priority:** Must have
 
@@ -682,7 +680,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given a code is shown before the event start time or after the 15-minute grace period, When a student scans it, Then it is rejected as "outside event time" (R4 S15).
 - EX3: Given the s-CPD admin requires at least 2 code displays per event, When the organiser shows only one, Then the event can still be saved but is flagged for admin review.
 
-## R4 S24 — Phone storage full
+## R4 S24 - Phone storage full
 
 **Priority:** Must have
 
@@ -699,7 +697,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the app has check-ins waiting and storage becomes full, When I free up space, Then the waiting records are not lost.
 - EX3: Given the app cache is full of other data, When a check-in is saved, Then the cache is cleared first and the check-in records are never deleted automatically.
 
-## R4 S25 — App uninstalled or data lost 
+## R4 S25 - App uninstalled or data lost 
 
 **Priority:** Must have
 
@@ -720,7 +718,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 # R5: Points and Progress
 
-## R5 S1 — Total points on home screen 
+## R5 S1 - Total points on home screen 
 
 **Priority:** Must have
 
@@ -737,7 +735,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my total is shown from saved data, When I am offline, Then the offline notice in R5 S7 applies.
 - EX3: Given I have credited and reversed entries of the same event, When the total is calculated, Then it counts the credit once and the reversal once, so the net for that event is 0.
 
-## R5 S2 — Points history 
+## R5 S2 - Points history 
 
 **Priority:** Must have
 
@@ -753,7 +751,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I have more than 20 entries, When I scroll, Then they load in pages of 20 without duplicates or missing entries.
 - EX3: Given the event name was changed after the entry was made, When I view the history, Then the current event name is shown with the original date.
 
-## R5 S3 — When points will be added
+## R5 S3 - When points will be added
 
 **Priority:** Must have
 
@@ -770,7 +768,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my record is still Pending after 7 days, When I open my points, Then I see a button to contact the s-CPD office.
 - EX3: Given points processing is delayed, When it has not run within 24 hours, Then the s-CPD admin backend shows a warning.
 
-## R5 S4 — Points only for genuine attendance
+## R5 S4 - Points only for genuine attendance
 **Priority:** Must have
 
 **User story:** As a student, I want points to be given only for people who genuinely attended, so that my points are respected by the university and others.
@@ -787,7 +785,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given an event has a points value of 0, When points are processed, Then no credit entry is created and no notification is sent.
 - EX3: Given my record becomes Verified after the event ended, When it is verified, Then points are processed the same way as AC1.
 
-## R5 S5 — Reversal of points
+## R5 S5 - Reversal of points
 
 **Priority:** Must have
 
@@ -804,7 +802,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the event was cancelled after points were credited, When the admin reverses them, Then the reason shows "Event cancelled".
 - EX3: Given a reversal happens while I am offline, When I next open the app online, Then my total and history update and a notification is shown.
 
-## R5 S6 — Appeals 
+## R5 S6 - Appeals 
 
 **Priority:** Nice to have
 
@@ -822,7 +820,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given I already appealed this record, When I try to appeal again, Then I am told only one appeal is allowed and the status is shown.
 - EX4: Given my appeal is rejected, When the decision is made, Then I see the reason and the record stays Rejected.
 
-## R5 S7 — Points offline 
+## R5 S7 - Points offline 
 
 **Priority:** Must have
 
@@ -838,7 +836,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I log out, When I log in as another student on the same phone, Then the first student's saved points are not shown (R6 S12).
 - EX3: Given the saved data is more than 7 days old, When it is shown, Then a warning says it may be out of date.
 
-## R5 S8 — Cancelled event 
+## R5 S8 - Cancelled event 
 
 **Priority:** Must have
 
@@ -853,7 +851,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given the event is cancelled after the credit was made, When the admin acts, Then R5 S5 EX2 applies.
 - EX2: Given an event is postponed (new date, not cancelled), When the new date is set, Then my Pending entry and booking move to the new date and the check-in rules use the new time.
 
-## R5 S9 — Points cannot be changed directly
+## R5 S9 - Points cannot be changed directly
 
 **Priority:** Must have
 
@@ -869,7 +867,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a denied attempt is made, When it is denied, Then it is written to the audit log with the account and time, and repeated attempts (3 or more) flag the account (R4 S20).
 - EX2: Given an s-CPD admin needs to correct points, When the admin acts, Then the correction is made only as a new credit or reversal entry with a reason, never as an edit of an old entry.
 
-## R5 S10 — Progress and categories 
+## R5 S10 - Progress and categories 
 
 **Priority:** Nice to have
 
@@ -884,7 +882,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given no target is set for my programme, When I open the points screen, Then no progress bar is shown and the message "No target set" appears.
 - EX2: Given my total is above the target, When the bar is shown, Then it is full and shows the real total (not capped at the target number).
 - EX3: Given an event has no category, When it is credited, Then it is shown under "Other".
-## R5 S11 — Credit notification 
+## R5 S11 - Credit notification 
 
 **Priority:** Nice to have
 
@@ -901,7 +899,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Quality:** Usability
 
-## R5 S12 — Organiser attendance and credit view 
+## R5 S12 - Organiser attendance and credit view 
 
 **Priority:** Must have
 
@@ -917,7 +915,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given nobody checked in, When I open the list, Then I see "No check-ins" and the code display log (R4 S23).
 - EX3: Given I open the list offline, When the list was loaded before, Then it is shown read-only with an offline notice; if it was never loaded, I am told to connect.
 
-## R5 S13 — Flag a suspicious attendee
+## R5 S13 - Flag a suspicious attendee
 
 **Priority:** Nice to have
 
@@ -933,7 +931,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I tap "Flag" without a note, When I confirm, Then I am told a note is required.
 - EX3: Given I flag more than 20% of an event's attendees, When I confirm, Then the s-CPD admin is also notified for review of the organiser's use of the feature.
 
-## R5 S14 — Points value fixed at approval 
+## R5 S14 - Points value fixed at approval 
 
 **Priority:** Must have
 
@@ -948,7 +946,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given an admin must correct the value after approval, When the admin changes it before the event starts, Then the change is logged with reason and bookings are not affected.
 - EX2: Given the event has already started, When anyone tries to change the points value, Then it is refused, and only a documented correction (new credit or reversal) is possible.
 
-## R5 S15 — Invalidate record and reverse points 
+## R5 S15 - Invalidate record and reverse points 
 
 **Priority:** Must have
 
@@ -964,7 +962,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the record has already been reversed, When I invalidate it again, Then the system refuses and shows the earlier reversal.
 - EX3: Given the student has an appeal waiting, When I invalidate the record, Then the appeal is closed with the same reason.
 
-## R5 S16 — Credit and reversal history 
+## R5 S16 - Credit and reversal history 
 
 **Priority:** Must have
 
@@ -979,7 +977,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given an entry exists, When anyone tries to edit or delete it, Then it is refused (entries are append-only).
 - EX2: Given an admin searches by student or event, When results are shown, Then the full chain (credit, reversal, appeal result) appears in time order.
 
-## R5 S17 — Notifications disabled or failed 
+## R5 S17 - Notifications disabled or failed 
 
 **Priority:** Must have
 
@@ -999,7 +997,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 # R6: Roles and Access
 
-## R6 S1 — Student login
+## R6 S1 - Student login
 
 **Priority:** Must have
 
@@ -1022,7 +1020,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX6: Given the block time has passed, When I log in with the correct password, Then I can log in and the wrong-attempt counter is reset.
 
 
-## R6 S2 — Club organiser login 
+## R6 S2 - Club organiser login 
 
 **Priority:** Must have
 
@@ -1040,7 +1038,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given the first password given by the office is older than 7 days, When I log in, Then it no longer works and I must ask the office for a new one.
 
 
-## R6 S3 — Password reset 
+## R6 S3 - Password reset 
 
 **Priority:** Nice to have
 
@@ -1060,7 +1058,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX5: Given I reset my password, When it is saved, Then all my older sessions are signed out.
 - EX6: Given the new password is weaker than the rules in R6 S16 AC3, When I submit, Then I see a field error.
 
-## R6 S4 — Student screens only 
+## R6 S4 - Student screens only 
 **Priority:** Must have
 
 **User story:** As a student, I want to see only the student screens, so that the app is simple and I do not see features that are not for me.
@@ -1074,7 +1072,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given I am a student and I open a link to a club screen, When the app opens it, Then I see "You do not have access" and the student home screen.
 - EX2: Given my role was changed in the backend while I was logged in, When I next open or refresh the app, Then the screens update to match my new role.
 
-## R6 S5 — Club screens 
+## R6 S5 - Club screens 
 
 **Priority:** Must have
 
@@ -1089,7 +1087,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given my club has no events, When I open My events, Then I see "No events yet" and a Create event button.
 - EX2: Given my club account is suspended in the backend, When I open the app, Then I am signed out.
 
-## R6 S6 — Student data privacy
+## R6 S6 - Student data privacy
 
 **Priority:** Must have
 
@@ -1104,7 +1102,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a student changes the student ID in a request to another student's ID, When the request reaches the backend, Then it is denied and logged.
 - EX2: Given a club organiser views an attendance list, When it is shown, Then it shows only the name, student ID and status of students on that club's own events, and no points total or other bookings.
 
-## R6 S7 — Students cannot use club functions 
+## R6 S7 - Students cannot use club functions 
 
 **Priority:** Must have
 
@@ -1119,7 +1117,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a student is also a committee member in real life, When the student wants club access, Then a separate club account must be created by the s-CPD office; one account never has two roles.
 - EX2: Given a denied request is made, When it is denied, Then it is written to the audit log.
 
-## R6 S8 — Organiser limited to own club 
+## R6 S8 - Organiser limited to own club 
 
 **Priority:** Must have
 
@@ -1134,7 +1132,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given club A and club B hold a joint event, When the s-CPD office links the event to both clubs in the backend, Then organisers of both clubs can see that event only.
 - EX2: Given a club account is replaced (R6 S15), When the old organiser sends a request, Then it is denied.
 
-## R6 S9 — Approvals and role changes only in backend 
+## R6 S9 - Approvals and role changes only in backend 
 
 **Priority:** Must have
 
@@ -1149,7 +1147,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a user sends a hand-made request for an approval, When it reaches the backend, Then it is refused and logged.
 - EX2: Given an admin changes a role in the backend, When the change is saved, Then the change is written to the audit log with admin name, old role, new role, reason and time.
 
-## R6 S10 — Registration always creates student accounts 
+## R6 S10 - Registration always creates student accounts 
 
 **Priority:** Must have
 
@@ -1165,7 +1163,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a request to register includes a "role" field set to club or admin, When the backend receives it, Then the field is ignored and a student account is made.
 - EX2: Given the office tries to link a club account to two clubs, When it saves, Then it is refused.
 
-## R6 S11 — Disable an account 
+## R6 S11 - Disable an account 
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want to disable an account quickly, so that misuse can be stopped.
@@ -1181,7 +1179,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given an account is disabled, When it is disabled, Then the action is logged with admin name, reason and time.
 
 
-## R6 S12 — Safe sign out
+## R6 S12 - Safe sign out
 
 **Priority:** Must have
 
@@ -1198,7 +1196,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my session expired while offline, When I open the app, Then I can still scan and view saved data until I go online (R4 S11), but cannot see another account's data.
 - EX3: Given I log out, When the phone is checked, Then no password, token or personal data remains on the phone.
 
-## R6 S13 — One phone per account
+## R6 S13 - One phone per account
 
 **Priority:** Must have
 
@@ -1214,7 +1212,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given I log in on a second phone, When I do, Then I can view my bookings and points but cannot check in until I move my account.
 - EX2: Given two students share one phone, When the second student tries to register it, Then it is refused and the message tells them to contact the s-CPD office.
 - EX3: Given I reset my phone to factory settings, When I log in again, Then I must register it as a new phone.
-## R6 S14 — App lock
+## R6 S14 - App lock
 
 **Priority:** Nice to have
 
@@ -1230,7 +1228,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the app lock is turned on and I forget my fingerprint, When I use the phone PIN, Then I can continue.
 - EX3: Given a notification arrives while the app is locked, When it is shown, Then it does not show personal details (R5-NFR5).
 
-## R6 S15 — Replace a club's organiser
+## R6 S15 - Replace a club's organiser
 
 **Priority:** Nice to have
 
@@ -1245,7 +1243,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given the former organiser has an event running, When access is replaced, Then the new organiser can continue the event and the old organiser's check-in screen stops issuing codes within 5 minutes of being online.
 - EX2: Given the replacement happens, When it is saved, Then it is logged with both names, reason and time.
 
-## R6 S16 — Create a student account with university email
+## R6 S16-Create a student account with university email
 
 **Priority:** Must have
 
@@ -1268,7 +1266,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX6: Given I am offline, When I try to register, Then I am told "Connect to the internet to register".
 - EX7: Given I close the app after verifying but before setting the password, When I open the app again, Then I can continue from the password step.
 
-## R6 S17 — Study details to check the student is still enrolled
+## R6 S17-Study details to check the student is still enrolled
 
 **Priority:** Must have
 
@@ -1289,7 +1287,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX5: Given the degree is not on the list, When I need to register, Then I can choose "Other" and the account waits for admin approval.
 - EX6: Given study details are self-reported and can be false, When an admin audits, Then the admin can compare them with the university student records, and false details can lead to deactivation.
 
-## R6 S18 — Flag and deactivate accounts of graduated students
+## R6 S18 - Flag and deactivate accounts of graduated students
 
 **Priority:** Must have
 
@@ -1311,7 +1309,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX5: Given the same email address is later given to a different person, When that person registers, Then it is treated as a new account only after the admin has confirmed the old one is closed.
 - EX6: Given the daily check fails to run, When 24 hours have passed, Then the admin backend shows a warning.
 
-## R6 S19 — Admin handling of flagged accounts
+## R6 S19- Admin handling of flagged accounts
 
 **Priority:** Must have
 
@@ -1327,7 +1325,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given two admins act on the same account, When the second one confirms, Then they see the first decision and nothing is overwritten.
 - EX2: Given more than 100 accounts are flagged in one run, When the list opens, Then it can be filtered and handled in groups.
 
-## R6 S20 — Audit log for access changes 
+## R6 S20-Audit log for access changes 
 
 **Priority:** Must have
 
