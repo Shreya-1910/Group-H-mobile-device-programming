@@ -270,29 +270,26 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance Criteria:**
 - When this is enabled, attendance is Verified only if both scans are valid.
 
-
 # R4: Online and Offline
 
-## R4 S1 - Offline check-in 
-
+## R4 S1 - Offline check-in
 **Priority:** Must have
 
 **User story:** As a student, I want to check in at an event even when I have no signal, so that I still get credit for attending.
 
 **Acceptance criteria**
 
-- AC1: Given I have no internet connection and I am booked on the event, When I scan the valid event code during the event, Then my check-in is saved on my phone within 1 second and I see "Saved on this phone, waiting to sync" with the time I scanned.
+- AC1: Given I have no internet connection and I am booked on the event, When I scan the valid event code during the event, Then my check-in is saved and signed on my phone within 1 second and I see "Saved on this phone, waiting to sync" with the time I scanned.
 - AC2: Given I have no internet connection, When I scan a valid code, Then the app does not show any network error or ask me to try again later.
 
 **Exception cases**
 
 - EX1: Given I have already checked in to this event on this phone, When I scan the code again, Then I see "You have already checked in" and no second record is saved.
-- EX2: Given I have no booking and the event is not full, When I scan the code, Then the check-in is saved as "Needs review: no booking".
+- EX2: Given I have no booking and the event is not full, When I scan the code, Then the check-in is saved with the status Needs review and the reason "No booking".
 - EX3: Given my phone storage is full, When I scan, Then the behaviour in R4 S24 applies.
-- EX4: Given the app has never been opened online on this phone, When I scan, Then I see "Connect to the internet once to set up check-in" and nothing is saved.
+- EX4: Given the app has never been opened online on this phone or this phone is not registered, When I scan, Then I see "Connect to the internet once to set up check-in" and nothing is saved.
 
-## R4 S2 - Automatic sync 
-
+## R4 S2 - Automatic sync
 **Priority:** Must have
 
 **User story:** As a student, I want my saved check-ins to upload automatically when I get a connection, so that I do not have to remember to sync them myself.
@@ -306,19 +303,18 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Exception cases**
 
 - EX1: Given the upload is interrupted halfway (connection lost), When the connection returns, Then the upload resumes and no check-in is duplicated or lost.
-- EX2: Given the phone has a connection but the server cannot be reached, When the upload fails, Then the app retries with increasing delays (see R4 S4) and the check-in stays Pending.
+- EX2: Given the phone has a connection but the server cannot be reached, When the upload fails, Then the app retries with the delays in R4 S4 EX1 and the check-in stays Pending.
 - EX3: Given battery saver or background restrictions stop the background upload, When I next open the app online, Then the upload starts within 10 seconds of opening.
 - EX4: Given my session has expired, When the upload is attempted, Then R4 S11 applies.
 
-## R4 S3 - Sync status visibility 
-
+## R4 S3 - Sync status visibility
 **Priority:** Must have
 
 **User story:** As a student, I want to see which of my check-ins have synced, so that I know my attendance will count.
 
 **Acceptance criteria**
 
-- AC1: Given I have check-ins in different states, When I open "My attendance", Then each one shows exactly one status: Pending, Syncing, Verified, Rejected, Needs review or Couldn't sync.
+- AC1: Given I have check-ins in different states, When I open "My attendance", Then each one shows exactly one status from the list at the top of R4: Pending, Syncing, Verified, Rejected, Needs review or Couldn't sync.
 - AC2: Given at least one check-in is waiting, When I use the app, Then a banner shows how many are waiting, for example "2 check-ins waiting to sync".
 - AC3: Given I am online with waiting check-ins, When I tap "Sync now", Then the upload starts immediately and the "Last synced" time updates.
 
@@ -328,9 +324,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given a sync is already running, When I tap "Sync now", Then no second sync starts.
 - EX3: Given I have more than 20 check-ins, When I open "My attendance", Then they load in pages of 20, newest first, and the banner count is still correct.
 
-
-## R4 S4 - Failed sync handling 
-
+## R4 S4 - Failed sync handling
 **Priority:** Must have
 
 **User story:** As a student, I want to see a clear message when a check-in cannot be synced, so that I know what to do and do not wait forever.
@@ -338,18 +332,16 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given the upload fails 5 times in a row, When I open "My attendance", Then the check-in shows "Couldn't sync", the reason, and a "Retry" button instead of staying on "Syncing".
-- AC2: Given a check-in is Rejected, When I tap it, Then I see the reason in plain language, for example "Code expired" or "Synced too late", and an "Appeal" button.
+- AC2: Given a check-in is Rejected, When I tap it, Then I see the reason in plain language, for example "Code expired" or "Synced too late", and an "Appeal" button. Appeals are decided by the s-CPD admin.
 
 **Exception cases**
 
-- EX1: Given a check-in is in "Couldn't sync", When I have not retried, Then the app still retries automatically at most once every 6 hours until the 72-hour deadline *(assumed)*.
+- EX1: Given an upload fails, When the app retries, Then the first 5 attempts wait 30 seconds, 1, 2, 4 and 8 minutes (backoff base 30 seconds, doubling), and after that the app retries at most once every 6 hours until the 72-hour deadline (assumed).
 - EX2: Given a check-in is in "Couldn't sync" and less than 12 hours remain before the 72-hour deadline, When I open the app, Then a warning shows the time left.
 - EX3: Given the failure keeps happening after I tap "Retry", When I tap "Report a problem", Then a support message with the check-in ID (no personal data) is prepared so I can send it to the s-CPD office.
 - EX4: Given the failure reason is a server error and not a rejection, When the server recovers, Then the check-in is uploaded without any action from me and without being marked Rejected.
 
-
-## R4 S5 - Late sync of an on-time scan 
-
+## R4 S5 - Late sync of an on-time scan
 **Priority:** Must have
 
 **User story:** As a student, I want a check-in I made during the event to count even if my phone only synced later, so that a weak signal does not cost me my points.
@@ -357,7 +349,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given I scanned during the event and I am offline, When my phone syncs within 72 hours after the event ends, Then the check-in is judged on the time inside the scanned code (not the upload time and not my phone clock), and can become Verified.
-- AC2: Given I scanned during the event, When my phone syncs more than 72 hours after the event ends, Then the check-in shows "Rejected: synced too late" with an option to appeal.
+- AC2: Given I scanned during the event, When my phone syncs more than 72 hours after the event ends, Then the check-in shows Rejected with the reason "Synced too late" and an option to appeal.
 
 **Exception cases**
 
@@ -365,9 +357,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the organiser changed the event time after I scanned, When my check-in syncs, Then it is judged against the event time that was valid when the code was issued.
 - EX3: Given my check-in syncs exactly at the 72-hour limit, When the server checks it, Then the server clock decides and the rule is applied the same way every time.
 
-
-## R4 S6 - Wrong or expired code 
-
+## R4 S6 - Wrong or expired code
 **Priority:** Must have
 
 **User story:** As a student, I want to be told right away when I scan a wrong or expired code, so that I can scan again while I am still at the event.
@@ -382,32 +372,29 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given I scan something that is not an event code (for example a website QR), When the app reads it, Then I see "This is not an event code" and nothing is saved.
 - EX2: Given I type a manual code with the wrong number of digits or non-digits, When I tap "Check in", Then I see a field error and nothing is saved.
-- EX3: Given I enter a wrong manual code 5 times, When I try again, Then manual entry is locked for 60 seconds *(assumed)* to stop guessing.
+- EX3: Given I enter a wrong manual code 5 times, When I try again, Then manual entry is locked for 60 seconds (assumed) to stop guessing.
 - EX4: Given camera permission is denied, When I open the scanner, Then I see a button to open settings as well as "Enter code manually".
 - EX5: Given I am booked on two back-to-back events, When I scan a code of the other event, Then AC1 applies.
 
-
-## R4 S7 - Check-in without a booking 
-
+## R4 S7 - Check-in without a booking
 **Priority:** Must have
 
 **User story:** As a student who could not book because the event was full, I want my attendance to be recorded for the club to review, so that I can still be considered for points if the club lets me in.
 
 **Acceptance criteria**
 
-- AC1: Given the event is full and I have no booking, When I scan the code at the event, Then my check-in is saved with the status "Needs review: no booking" and I am told the club decides whether points are given.
+- AC1: Given the event is full and I have no booking, When I scan the code at the event, Then my check-in is saved with the status Needs review and the reason "No booking", and I am told the club decides whether points are given.
 - AC2: Given I have no booking, When the club approves my record, Then my status changes to Verified and the normal points rules apply.
-- AC3: Given I have no booking, When the club rejects my record, Then I see "Rejected by club" and can still read the reason.
+- AC3: Given I have no booking, When the club rejects my record, Then my status changes to Rejected with the reason "Rejected by club" and I can still read the reason.
 
 **Exception cases**
 
-- EX1: Given the club does not decide within 7 days of the event *(assumed)*, When the period ends, Then the record stays "Needs review" and the s-CPD admin list shows it as overdue. It is never auto-approved.
+- EX1: Given the club does not decide within 7 days of the event (assumed), When the period ends, Then the record stays Needs review and the s-CPD admin list shows it as overdue. It is never auto-approved.
 - EX2: Given a booking is cancelled by me before the event, When I scan at the event, Then this story applies as if I had no booking.
 - EX3: Given I am on a waiting list that later gets a place, When the place is confirmed after my scan, Then my record is re-checked and can become Verified without club action.
+- EX4: Given the club rejected my record, When I tap "Appeal", Then the appeal goes to the s-CPD admin and not to the club (R5 S6).
 
-
-## R4 S8 - Log out with unsynced check-ins 
-
+## R4 S8 - Log out with unsynced check-ins
 **Priority:** Must have
 
 **User story:** As a student, I want a warning before I log out with unsynced check-ins, so that I do not lose my attendance by accident.
@@ -424,9 +411,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given an administrator disables my account, When I have unsynced check-ins, Then I am signed out but the records are kept until the account is re-enabled or 72 hours pass after the event, and the s-CPD office can review them.
 - EX4: Given I log in with a different account on the same phone while records of the first account are waiting, When I log in, Then the first account's records are not visible, not uploaded under the new account and not deleted.
 
-
-## R4 S9 - Safe save if app closes 
-
+## R4 S9 - Safe save if app closes
 **Priority:** Must have
 
 **User story:** As a student, I want a check-in to be either safely saved or clearly not saved if my app closes or my battery dies while scanning, so that I never think I checked in when I did not.
@@ -442,7 +427,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given a check-in record cannot be read after a crash (corrupted), When I open the app, Then I see "One check-in could not be recovered, please scan again or contact the club" and the rest of the records are unaffected.
 
 ## R4 S10 - View bookings offline
-
 **Priority:** Nice to have
 
 **User story:** As a student, I want to see my booked events and ticket details offline, so that I can find the venue and show my booking without signal.
@@ -457,8 +441,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the saved data is more than 24 hours old, When it is shown, Then the notice also shows the "Last updated" time and a warning that the event may have changed.
 - EX3: Given I cancelled or the club cancelled an event while I was offline, When I reconnect, Then the list updates and I am notified of the change.
 
-## R4 S11 - Expired session while offline 
-
+## R4 S11 - Expired session while offline
 **Priority:** Nice to have
 
 **User story:** As a student, I want to stay able to check in if my login expires while I am offline, so that a timeout does not stop me at the event.
@@ -472,11 +455,9 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given I log in again with a different account than the one that scanned, When the upload would start, Then the records are not uploaded and I am told they belong to another account.
 - EX2: Given my account was disabled while I was offline, When I try to log in, Then I cannot log in and the check-ins stay on the phone for review by the s-CPD office (see R4 S8 EX3).
-- EX3: Given the session has been expired for more than 30 days *(assumed)*, When I scan offline, Then the scan is still saved but the record is marked for review when uploaded.
+- EX3: Given the session has been expired for more than 30 days (assumed), When I scan offline, Then the scan is still saved but the record is marked Needs review when uploaded.
 
-
-## R4 S12 - Biometric confirmation 
-
+## R4 S12 - Biometric confirmation
 **Priority:** Nice to have
 
 **User story:** As a student, I want to confirm my check-in with my fingerprint or PIN, so that nobody else can check in using my unlocked phone.
@@ -492,26 +473,23 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I fail the fingerprint 3 times, When the phone offers PIN, Then I can use the phone PIN as the fallback.
 - EX3: Given the code expires while the biometric prompt is open, When I confirm, Then I see "Code expired, please scan again" and nothing is saved.
 
-## R4 S13 - Move to a new phone 
-
+## R4 S13 - Move to a new phone
 **Priority:** Nice to have
 
 **User story:** As a student who has got a new phone, I want to move my account to it, so that I can keep checking in without losing earlier records.
 
 **Acceptance criteria**
 
-- AC1: Given I log in on a new phone, When I confirm the change on the new phone, Then the new phone is registered and the old phone can no longer check in.
+- AC1: Given I log in on a new phone, When I confirm the change on the new phone, Then the new phone is registered (R6 S22) and the old phone can no longer check in.
 - AC2: Given check-ins are still waiting on the old phone, When the change is made, Then I am warned that unsynced check-ins on the old phone must be synced first.
 
 **Exception cases**
 
-- EX1: Given my old phone is lost, broken or cannot go online, When I ask the s-CPD office to release the old phone, Then an admin can unregister it in the backend and the action is written to the audit log (R6 S20).
-- EX2: Given I changed phones in the last 7 days *(assumed)*, When I try to change again, Then I am told to contact the s-CPD office.
+- EX1: Given my old phone is lost, broken or cannot go online, When I ask the s-CPD office to release the old phone, Then an admin can unregister it in the admin tool (R6 S21) and the action is written to the audit log (R6 S20).
+- EX2: Given I changed phones in the last 7 days (assumed), When I try to change again, Then I am told to contact the s-CPD office.
 - EX3: Given unsynced records are lost with the old phone, When I report this, Then the "Missing check-in claim" in R4 S25 applies.
 
-
-## R4 S14 - Organiser runs check-in offline 
-
+## R4 S14 - Organiser runs check-in offline
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to run check-in without a connection, so that a weak venue signal does not stop my event.
@@ -524,11 +502,10 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Exception cases**
 
 - EX1: Given my phone battery dies or the app is closed during the event, When I reopen the event, Then code display can be resumed and codes issued earlier stay valid for scans already made.
-- EX2: Given I am offline for the whole event, When I reconnect, Then the list of codes shown during the event is uploaded so the server can verify student scans (see R4 S23).
+- EX2: Given I am offline for the whole event, When I reconnect, Then the session log of codes shown during the event (each code counter with its time) is uploaded so the server can verify student scans (see R4 S15 AC4 and R4 S23).
 - EX3: Given the event details were loaded more than 24 hours before the event, When I start check-in online, Then the app refreshes the event data first.
 
-## R4 S15 - Reject check-ins from people not at the event 
-
+## R4 S15 - Reject check-ins from people not at the event
 **Priority:** Must have
 
 **User story:** As a club organiser, I want check-ins from people who were not at my event to be rejected, so that my attendance list can be trusted.
@@ -538,12 +515,14 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - AC1: Given a student sends a photo of an old code, When the code is older than its 30-second window, Then the check-in is rejected.
 - AC2: Given a student scans after the event has ended plus the 15-minute grace period, When the record reaches the server, Then it is rejected as "outside event time".
 - AC3: Given a student's location is far from the venue, When the record reaches the server, Then it is marked Needs review and not rejected automatically.
+- AC4: Given an offline record whose code counter does not appear in the club device's session log, When the record reaches the server, Then it is marked Needs review with the reason "Code not in session log".
 
 **Exception cases**
 
 - EX1: Given the student's location permission is denied or the location is missing, When the record reaches the server, Then location is not used as a reason to reject and the check-in is judged on the code only.
 - EX2: Given the venue location is not set for the event, When the record is checked, Then no location check is made.
-- EX3: Given a student shares a live screenshot of the current code with a friend who is not present, When the friend scans it, Then the check-in is accepted by the code rule but the location rule in AC3 can flag it, and the organiser can review it.
+- EX3: Given a student shares a live screenshot of the current code with a friend who is not present, When the friend scans it offline, Then the code counter is in the session log so AC4 does not catch it, but the location rule in AC3 can flag it and the organiser can review it. This is a known weakness and must be listed in the security analysis.
+- EX4: Given the club device's session log has not been uploaded yet, When records arrive, Then they stay Needs review with the reason "Waiting for session log" and are checked again when the log arrives (up to 72 hours).
 
 ## R4 S16 - Phone clock cannot be used to cheat
 **Priority:** Must have
@@ -557,10 +536,9 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Exception cases**
 
-- EX1: Given the phone time and the code window differ by more than 24 hours, when the record reaches the server, Then it is marked Needs review and counted towards the flagging rule.
+- EX1: Given the phone time and the code window differ by more than 24 hours (assumed), When the record reaches the server, Then it is marked Needs review and counted towards the flagging rule in R4 S20.
 
 ## R4 S17 - Copied or edited check-ins
-
 **Priority:** Must have
 
 **User story:** As a club organiser, I want copied or edited check-ins to be rejected, so that nobody can inflate attendance for my event.
@@ -568,34 +546,35 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given a check-in was already accepted, When the same check-in is sent again, Then no second record is created.
-- AC2: Given someone edits the saved check-in on their phone, When it is uploaded, Then it is rejected and the account is flagged for review.
+- AC2: Given someone edits the saved check-in on their phone, When it is uploaded, Then the signature does not match and it is rejected and the account is flagged for review.
 - AC3: Given a student tries to check in a second time for the same event, When the record reaches the server, Then it is rejected as a duplicate.
+- AC4: Given a check-in is saved offline, When it is saved, Then it is signed with a key kept in the Android Keystore of the registered phone (R6 S22), and the server checks the signature before accepting it.
 
 **Exception cases**
 
 - EX1: Given the first upload succeeded but the phone never received the reply, When the phone sends the same check-in again, Then the server returns the original result and the student sees Verified or Pending, not Rejected as a duplicate.
 - EX2: Given a student checked in on two different phones, When both records arrive, Then the one from the unregistered phone is rejected.
+- EX3: Given the signing key can no longer be used (for example the phone was reset or its screen lock changed), When records signed before that arrive, Then they are marked Needs review and not Rejected.
 
-## R4 S18 - Organiser review of Needs review records 
-
+## R4 S18 - Organiser review of Needs review records
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to review check-ins that need a decision, so that honest students are not unfairly excluded.
 
 **Acceptance criteria**
 
-- AC1: Given some records are marked Needs review, When I open the event's attendance list, Then I can see each student, the reason it needs review, and "Approve" and "Reject" buttons.
+- AC1: Given some records are marked Needs review for reasons the club can judge (no booking, location, code not in session log, missing check-in claim), When I open the event's attendance list, Then I can see each student, the reason it needs review, and "Approve" and "Reject" buttons.
 - AC2: Given I approve or reject a record, When I confirm, Then the decision is saved with my name and the time.
 
 **Exception cases**
 
-- EX1: Given two organisers act on the same record, When the second one confirms, Then they see "Already decided by \[name\]" and the first decision stays.
+- EX1: Given two organisers act on the same record, When the second one confirms, Then they see "Already decided by [name]" and the first decision stays.
 - EX2: Given I am offline, When I try to approve or reject, Then I am told a connection is needed (decisions are never saved only on the organiser's phone).
 - EX3: Given I reject a record, When I confirm, Then a reason is required so the student can read it (R4 S7 AC3).
 - EX4: Given a record belongs to a student of a different club's event, When I try to open it, Then it is denied.
+- EX5: Given a record is Needs review because of an appeal, a tampering flag or a phone-clock mismatch, When I open the list, Then I cannot decide it and it shows "With s-CPD admin".
 
-## R4 S19 - Organiser phone clock wrong 
-
+## R4 S19 - Organiser phone clock wrong
 **Priority:** Nice to have
 
 **User story:** As a club organiser, I want the app to cope with my phone's clock being wrong, so that valid check-ins are not rejected by mistake.
@@ -607,10 +586,9 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Exception cases**
 
-- EX1: Given my phone is offline and the clock is wrong by more than 5 minutes, When I show codes, Then codes are still issued using the last known server time offset, and the records are marked for review if the offset is uncertain.
+- EX1: Given my phone is offline and the clock is wrong by more than 5 minutes, When I show codes, Then codes are still issued using the last known server time offset, and the records are marked Needs review if the offset is uncertain.
 
-## R4 S20 - Flag suspicious accounts 
-
+## R4 S20 - Flag suspicious accounts
 **Priority:** Nice to have
 
 **User story:** As an s-CPD admin, I want accounts with repeated rejected or tampered check-ins to be flagged in the backend, so that I can investigate misuse.
@@ -618,33 +596,32 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given an account has 3 or more rejected check-ins for tampering or duplicates, When I look at the backend data, Then the account appears in a flagged list with the reasons.
+- AC2: Given an account is flagged, When it appears in the list, Then the s-CPD admin (not a club) reviews it and decides within 5 working days.
 
 **Exception cases**
 
 - EX1: Given a flagged account is cleared by an admin, When the admin saves, Then the clearance is saved with the admin name, reason and time in the audit log.
 - EX2: Given the student is flagged, When a flag is raised, Then the student's access is not blocked automatically (an admin decides).
 
-## R4 S21 - "Can't make it" works offline
-
+## R4 S21 - "Can't make it" only when online and before the cut-off
 **Priority:** Must have
 
-**User story:** As a student, I want to cancel my booking from the 3-hour reminder even when I am offline, so that the club gets my place back as soon as my phone is online.
+**User story:** As a student, I want the "Can't make it" button on the 3-hour reminder to work when I can really cancel and to tell me clearly when I cannot, so that I do not think a booking was cancelled when it was not.
 
 **Acceptance criteria**
 
-- AC1: Given I receive the 3-hour reminder while offline, When I tap "Can't make it", Then I see "You are offline. Your cancellation is saved on this phone and has not reached the server yet" and the cancellation is saved in the same offline log used for check-ins.
-- AC2: Given I have a saved cancellation, When my phone gets a connection, Then it is uploaded within 60 seconds and my booking changes to Cancelled.
-- AC3: Given a cancellation is waiting to sync, When I open "My events", Then the booking shows "Cancellation pending".
+- AC1: Given I am online and more than 2 hours remain before the event (the cut-off in R2-S8), When I tap "Can't make it" on the 3-hour reminder, Then my booking is cancelled at once and the place is released.
+- AC2: Given I am offline, When I open the 3-hour reminder, Then "Can't make it" is disabled and shows "You are offline. Connect to the internet to cancel". Nothing is saved or queued, because the place cannot be released offline.
+- AC3: Given less than 2 hours remain before the event, When I open the 3-hour reminder, Then "Can't make it" is disabled and shows "Cancellation closed 2 hours before the event".
 
 **Exception cases**
 
-- EX1: Given the cancellation reaches the server after the event has started, When the server checks it, Then it is rejected with "Too late to cancel" and the booking stays.
-- EX2: Given I changed my mind and scan the event code while a cancellation is pending, When both records sync, Then the check-in wins, the cancellation is dropped and I am told.
-- EX3: Given the same cancellation is sent twice, When the server receives it, Then only one cancellation is made.
-- EX4: Given I am already online, When I tap "Can't make it", Then the cancellation is made immediately.
+- EX1: Given the button was disabled because I was offline and I get a connection before the cut-off, When the connection returns, Then the button becomes enabled without me reopening the reminder.
+- EX2: Given I tap the button just before the cut-off but the request reaches the server after it, When the server checks the time, Then the cancellation is refused with "Too late to cancel" and the booking stays.
+- EX3: Given I tap the button twice, When the server receives both, Then only one cancellation is made.
+- EX4: Given I cancel and the event is full, When the place is released, Then the first student on the waiting list is offered it.
 
-## R4 S22 - Back-to-back events 
-
+## R4 S22 - Back-to-back events
 **Priority:** Must have
 
 **User story:** As a student booked on two events that run one after the other, I want each scan to count only for the event whose code I scanned, so that I get fair credit for both.
@@ -661,27 +638,25 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I scan only one of two overlapping events' codes, When the records sync, Then the other event gets no attendance record.
 - EX3: Given one scan is made within the overlap of two events and the code is valid for both, When the record is made, Then the code's own event ID decides which event it counts for.
 
-## R4 S23 - Organiser decides when codes are shown 
-
+## R4 S23 - Organiser decides when codes are shown
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to choose when the check-in code is shown during the event, so that students cannot just scan at the start or end and leave.
 
 **Acceptance criteria**
 
-- AC1: Given check-in is open for my event, When I tap "Show code", Then the changing QR code and 6-digit code are displayed and each code is valid for 30 seconds.
+- AC1: Given check-in is open for my event, When I tap "Show code", Then the changing QR code and 6-digit code are displayed, the code changes every 15 seconds and the current and previous code are accepted (up to 30 seconds).
 - AC2: Given the code is displayed, When I tap "Hide code", Then no new code is issued and scans of hidden codes after 30 seconds are rejected as expired.
-- AC3: Given I show the code several times during the event, When students scan, Then every code display is logged with start time and end time.
+- AC3: Given I show the code several times during the event, When students scan, Then every code display is logged with start time, end time and the code counters shown (the session log used in R4 S15 AC4).
 - AC4: Given I show the code at least once, When I open the attendance list, Then I see how many students scanned in each display.
 
 **Exception cases**
 
 - EX1: Given I have never shown a code during the event, When the event ends, Then I am warned "No code was shown, nobody could check in".
 - EX2: Given a code is shown before the event start time or after the 15-minute grace period, When a student scans it, Then it is rejected as "outside event time" (R4 S15).
-- EX3: Given the s-CPD admin requires at least 2 code displays per event, When the organiser shows only one, Then the event can still be saved but is flagged for admin review.
+- EX3: Given the s-CPD admin requires at least 2 code displays per event, When the organiser shows only one, Then the event can still be saved but is flagged for admin review (assumed rule, to confirm with MDP partners).
 
 ## R4 S24 - Phone storage full
-
 **Priority:** Must have
 
 **User story:** As a student, I want to be warned when my phone is almost full and told clearly if a check-in cannot be saved, so that I do not believe I checked in when I did not.
@@ -697,8 +672,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the app has check-ins waiting and storage becomes full, When I free up space, Then the waiting records are not lost.
 - EX3: Given the app cache is full of other data, When a check-in is saved, Then the cache is cleared first and the check-in records are never deleted automatically.
 
-## R4 S25 - App uninstalled or data lost 
-
+## R4 S25 - App uninstalled or data lost
 **Priority:** Must have
 
 **User story:** As a student, I want to know what happens to my waiting check-ins if I uninstall the app or lose my phone, and to have a way to claim my missing attendance, so that I am not left with no help.
@@ -706,20 +680,37 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given I have check-ins waiting to sync, When I open the app, Then the banner says "Uninstalling or clearing app data will delete check-ins that are not synced".
-- AC2: Given I reinstalled the app or changed phone and my earlier check-ins were never synced, When I submit a "Missing check-in claim" for the event within 7 days, Then the claim is saved as "Needs review: claim" and the organiser decides.
+- AC2: Given I reinstalled the app or changed phone and my earlier check-ins were never synced, When I submit a "Missing check-in claim" for the event within 7 days, Then the claim is saved with the status Needs review and the reason "Missing check-in claim", and the organiser decides.
 - AC3: Given I submit a claim, When the organiser approves, Then it becomes Verified under the normal points rules and the decision is written to the audit log.
 
 **Exception cases**
 
 - EX1: Given I have no booking for the event and I submit a claim, When the claim reaches the organiser, Then it also shows "no booking".
 - EX2: Given the claim window has passed, When I try to submit a claim, Then I am told to contact the s-CPD office.
-- EX3: Given I submit more than 5 claims in one month, When I submit another, Then the account is flagged for review.
+- EX3: Given I submit more than 5 claims in one month, When I submit another, Then the account is flagged for review (R4 S20).
 - EX4: Given I log in again after reinstalling, When the app opens, Then my already-synced attendance and points are shown again from the server.
+- EX5: Given the organiser rejects my claim, When I tap "Appeal", Then the appeal goes to the s-CPD admin (R5 S6).
+
+## R4 S26 - No-show only after the sync deadline
+**Priority:** Must have
+
+**User story:** As a student who attended an event, I want to be marked as a no-show only after my offline check-in has had time to sync, so that I am not penalised unfairly.
+
+**Acceptance criteria**
+
+- AC1: Given I booked an event and I have no check-in record, When the event ends, Then my booking shows "Waiting for sync period" and not "No-show".
+- AC2: Given 72 hours have passed since the event ended and I still have no check-in record, When the server runs its check, Then my booking is marked "No-show" and any no-show rule in R2-S12 is applied.
+- AC3: Given my check-in syncs within the 72 hours, When it is accepted or sent to review, Then I am never marked as a no-show for that event.
+
+**Exception cases**
+
+- EX1: Given my record is Needs review when the 72 hours end, When the server runs its check, Then I am not marked as a no-show until a decision is made.
+- EX2: Given the organiser opens the attendance list before the 72 hours end, When students have no record, Then they show "Possible no-show until [time]".
+- EX3: Given I was marked as a no-show and my missing check-in claim (R4 S25) is later approved, When it is approved, Then the no-show mark is removed and the change is logged.
 
 # R5: Points and Progress
 
-## R5 S1 - Total points on home screen 
-
+## R5 S1 - Total points on home screen
 **Priority:** Must have
 
 **User story:** As a student, I want to see my total s-CPD points on my home screen, so that I know how far I have got.
@@ -735,8 +726,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my total is shown from saved data, When I am offline, Then the offline notice in R5 S7 applies.
 - EX3: Given I have credited and reversed entries of the same event, When the total is calculated, Then it counts the credit once and the reversal once, so the net for that event is 0.
 
-## R5 S2 - Points history 
-
+## R5 S2 - Points history
 **Priority:** Must have
 
 **User story:** As a student, I want a history of every points entry, so that I can see where each point came from.
@@ -752,7 +742,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given the event name was changed after the entry was made, When I view the history, Then the current event name is shown with the original date.
 
 ## R5 S3 - When points will be added
-
 **Priority:** Must have
 
 **User story:** As a student, I want to see exactly when my points will be added, so that I am not worried when they do not appear straight away.
@@ -764,7 +753,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Exception cases**
 
-- EX1: Given my record is Needs review, When I open my points, Then the reason shows "Waiting for club decision" and how long it has been waiting.
+- EX1: Given my record is Needs review, When I open my points, Then the reason shows "Waiting for club decision" or "Waiting for s-CPD admin decision" and how long it has been waiting.
 - EX2: Given my record is still Pending after 7 days, When I open my points, Then I see a button to contact the s-CPD office.
 - EX3: Given points processing is delayed, When it has not run within 24 hours, Then the s-CPD admin backend shows a warning.
 
@@ -786,7 +775,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given my record becomes Verified after the event ended, When it is verified, Then points are processed the same way as AC1.
 
 ## R5 S5 - Reversal of points
-
 **Priority:** Must have
 
 **User story:** As a student, I want to be told clearly if points are taken away later, so that I am never surprised and can challenge it.
@@ -795,33 +783,35 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - AC1: Given a credited record is later found invalid, When the points are reversed, Then my history shows a "Reversed" entry with the reason and the original credit stays visible.
 - AC2: Given points were reversed, When this happens, Then my total goes down by that amount and I receive a notification.
+- AC3: Given levels or badges are based on my confirmed points, When a reversal makes my total fall below a level threshold, Then my level is recalculated within 5 seconds, a badge earned only from the reversed event is removed, and I am told which level or badge changed and why.
 
 **Exception cases**
 
 - EX1: Given a credit is reversed twice by mistake, When the second reversal is attempted, Then it is refused and I am not charged twice.
 - EX2: Given the event was cancelled after points were credited, When the admin reverses them, Then the reason shows "Event cancelled".
 - EX3: Given a reversal happens while I am offline, When I next open the app online, Then my total and history update and a notification is shown.
+- EX4: Given a reversal is later undone because my appeal was accepted (R5 S6), When the new credit is made, Then the level and badges are recalculated the same way.
 
-## R5 S6 - Appeals 
-
+## R5 S6 - Appeals
 **Priority:** Nice to have
 
 **User story:** As a student, I want to appeal a rejection or reversal, so that a mistake can be corrected.
 
 **Acceptance criteria**
 
-- AC1: Given a record is Rejected or Reversed, When I tap "Appeal" and send a note (maximum 500 characters), Then the record moves to "Needs review" and I can see the appeal status.
-- AC2: Given my appeal is accepted, When the decision is made, Then I receive the points as a new credit entry and I am notified.
+- AC1: Given a record is Rejected or Reversed, When I tap "Appeal" and send a note (maximum 500 characters), Then the record moves to Needs review and I can see the appeal status.
+- AC2: Given I have appealed, When the appeal is reviewed, Then it is decided by the s-CPD admin (never by the club whose decision is appealed) within 5 working days.
+- AC3: Given my appeal is accepted, When the decision is made, Then I receive the points as a new credit entry and I am notified.
 
 **Exception cases**
 
 - EX1: Given I send an appeal while offline, When I tap "Send", Then it is saved on the phone and sent when I reconnect, the same way as a check-in.
-- EX2: Given 14 days have passed since the decision *(assumed)*, When I tap "Appeal", Then I see "The appeal period has ended" and no appeal is made.
+- EX2: Given 14 days have passed since the decision (assumed), When I tap "Appeal", Then I see "The appeal period has ended" and no appeal is made.
 - EX3: Given I already appealed this record, When I try to appeal again, Then I am told only one appeal is allowed and the status is shown.
 - EX4: Given my appeal is rejected, When the decision is made, Then I see the reason and the record stays Rejected.
+- EX5: Given an appeal has not been decided after 5 working days, When the time passes, Then it shows as overdue at the top of the admin list and I see "Your appeal is taking longer than expected".
 
-## R5 S7 - Points offline 
-
+## R5 S7 - Points offline
 **Priority:** Must have
 
 **User story:** As a student, I want to see my points when I am offline, so that I can check my progress anywhere.
@@ -836,8 +826,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given I log out, When I log in as another student on the same phone, Then the first student's saved points are not shown (R6 S12).
 - EX3: Given the saved data is more than 7 days old, When it is shown, Then a warning says it may be out of date.
 
-## R5 S8 - Cancelled event 
-
+## R5 S8 - Cancelled event
 **Priority:** Must have
 
 **User story:** As a student, I want no points for a cancelled event, so that my total stays correct.
@@ -852,7 +841,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given an event is postponed (new date, not cancelled), When the new date is set, Then my Pending entry and booking move to the new date and the check-in rules use the new time.
 
 ## R5 S9 - Points cannot be changed directly
-
 **Priority:** Must have
 
 **User story:** As a student, I want nobody, including me, to be able to change points directly, so that my s-CPD record can be trusted.
@@ -867,8 +855,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a denied attempt is made, When it is denied, Then it is written to the audit log with the account and time, and repeated attempts (3 or more) flag the account (R4 S20).
 - EX2: Given an s-CPD admin needs to correct points, When the admin acts, Then the correction is made only as a new credit or reversal entry with a reason, never as an edit of an old entry.
 
-## R5 S10 - Progress and categories 
-
+## R5 S10 - Progress and categories
 **Priority:** Nice to have
 
 **User story:** As a student, I want to see my progress towards a target and by category, so that I know what kinds of activities I still need.
@@ -882,8 +869,8 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given no target is set for my programme, When I open the points screen, Then no progress bar is shown and the message "No target set" appears.
 - EX2: Given my total is above the target, When the bar is shown, Then it is full and shows the real total (not capped at the target number).
 - EX3: Given an event has no category, When it is credited, Then it is shown under "Other".
-## R5 S11 - Credit notification 
 
+## R5 S11 - Credit notification
 **Priority:** Nice to have
 
 **User story:** As a student, I want a notification when points are credited, so that I get quick feedback for attending.
@@ -897,26 +884,23 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given notifications are turned off on my phone or in the app, When points are credited, Then the credit is still made and R5 S17 applies.
 - EX2: Given I receive 3 or more credits within 10 minutes, When notifications are sent, Then they are grouped into one notification.
 
-**Quality:** Usability
-
-## R5 S12 - Organiser attendance and credit view 
-
+## R5 S12 - Organiser attendance and credit view
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to see who attended my event and whether they have been credited, so that I can confirm my students were rewarded.
 
 **Acceptance criteria**
 
-- AC1: Given my event has ended, When I open its attendance list, Then I can see counts and each student's status: Verified, Pending, Needs review or Rejected, and whether points were credited.
+- AC1: Given my event has ended, When I open its attendance list, Then I can see counts and each student's status: Verified, Pending, Needs review, Rejected or Couldn't sync, and whether points were credited.
 
 **Exception cases**
 
-- EX1: Given some students' check-ins have not synced yet, When I open the list, Then it shows "Some check-ins may still be waiting to sync until \[72 hours after event end\]" and the time the list was last updated.
+- EX1: Given some students' check-ins have not synced yet, When I open the list, Then it shows "Some check-ins may still be waiting to sync until [72 hours after event end]" and the time the list was last updated.
 - EX2: Given nobody checked in, When I open the list, Then I see "No check-ins" and the code display log (R4 S23).
 - EX3: Given I open the list offline, When the list was loaded before, Then it is shown read-only with an offline notice; if it was never loaded, I am told to connect.
+- EX4: Given students booked but have no record yet, When I open the list before the 72 hours end, Then they show "Possible no-show until [time]".
 
 ## R5 S13 - Flag a suspicious attendee
-
 **Priority:** Nice to have
 
 **User story:** As a club organiser, I want to flag a suspicious attendee, so that the s-CPD office can check them before points stand.
@@ -924,15 +908,15 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Acceptance criteria**
 
 - AC1: Given I think a student did not really attend, When I tap "Flag" and add a note, Then the record moves to Needs review and I cannot remove points myself.
+- AC2: Given a record was flagged, When it is reviewed, Then the s-CPD admin decides within 5 working days.
 
 **Exception cases**
 
 - EX1: Given points were already credited, When I flag the record, Then the credit stays until an s-CPD admin decides; the student sees "Under review".
 - EX2: Given I tap "Flag" without a note, When I confirm, Then I am told a note is required.
-- EX3: Given I flag more than 20% of an event's attendees, When I confirm, Then the s-CPD admin is also notified for review of the organiser's use of the feature.
+- EX3: Given I flag more than 20% of an event's attendees (assumed), When I confirm, Then the s-CPD admin is also notified for review of the organiser's use of the feature.
 
-## R5 S14 - Points value fixed at approval 
-
+## R5 S14 - Points value fixed at approval
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want the points value of an event to be fixed when I approve it, so that nobody can change it after students attend.
@@ -946,15 +930,14 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given an admin must correct the value after approval, When the admin changes it before the event starts, Then the change is logged with reason and bookings are not affected.
 - EX2: Given the event has already started, When anyone tries to change the points value, Then it is refused, and only a documented correction (new credit or reversal) is possible.
 
-## R5 S15 - Invalidate record and reverse points 
-
+## R5 S15 - Invalidate record and reverse points
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want to invalidate a record and reverse its points, so that cheating found later can be corrected.
 
 **Acceptance criteria**
 
-- AC1: Given I mark an attendance record invalid in the backend, When the change is saved, Then a reversal entry is created, the student is notified, and the earlier credit is never deleted.
+- AC1: Given I mark an attendance record invalid in the admin tool (R6 S21), When the change is saved, Then a reversal entry is created, the student is notified, and the earlier credit is never deleted.
 
 **Exception cases**
 
@@ -962,8 +945,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the record has already been reversed, When I invalidate it again, Then the system refuses and shows the earlier reversal.
 - EX3: Given the student has an appeal waiting, When I invalidate the record, Then the appeal is closed with the same reason.
 
-## R5 S16 - Credit and reversal history 
-
+## R5 S16 - Credit and reversal history
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want a full history of every credit and reversal with its reason, so that I can answer questions and audits.
@@ -977,8 +959,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given an entry exists, When anyone tries to edit or delete it, Then it is refused (entries are append-only).
 - EX2: Given an admin searches by student or event, When results are shown, Then the full chain (credit, reversal, appeal result) appears in time order.
 
-## R5 S17 - Notifications disabled or failed 
-
+## R5 S17 - Notifications disabled or failed
 **Priority:** Must have
 
 **User story:** As a student, I want to still find out about credits, reversals, appeal results and booking changes even when notifications are off or fail, so that I never miss important changes.
@@ -994,11 +975,12 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given notifications are off, When I open the app, Then a one-time prompt explains that important updates will be missed and offers to open phone settings.
 - EX2: Given a reminder (such as the 3-hour reminder in R4 S21) cannot be sent or is blocked, When the time passes, Then it is not sent late after the event has started.
 - EX3: Given I am offline, When messages are created, Then they appear in the in-app list when I next connect.
+- EX4: Given the check-in alert is on, When the check-in window opens (R3-S8), Then the alert is sent at that moment and not when the organiser taps Start (R3-S1).
+- EX5: Given the phone's notification permission is denied, When a reminder or check-in alert is due, Then no system notification is shown and a banner appears the next time I open the app.
 
 # R6: Roles and Access
 
 ## R6 S1 - Student login
-
 **Priority:** Must have
 
 **User story:** As a student, I want to log in with my university email and password, so that only I can see my bookings and points.
@@ -1016,12 +998,11 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my account is disabled, When I tap "Log in", Then I see "This account is not available. Contact the s-CPD office".
 - EX3: Given my account is deactivated because my study period ended (R6 S18), When I tap "Log in", Then I see the message from R6 S18 AC3.
 - EX4: Given I am offline and have never logged in on this phone, When I tap "Log in", Then I see "Connect to the internet to log in".
-- EX5: Given I am already logged in and go offline, When I open the app, Then I stay logged in and can use the offline features (R4).
+- EX5: Given I am already logged in and go offline, When I open the app, Then I stay logged in and can use the offline features.
 - EX6: Given the block time has passed, When I log in with the correct password, Then I can log in and the wrong-attempt counter is reset.
+- EX7: Given my email has not been verified, When I tap "Log in", Then I am told to verify my email first and cannot log in.
 
-
-## R6 S2 - Club organiser login 
-
+## R6 S2 - Club organiser login
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to log in with the account the s-CPD office gave me, so that only my club can manage its events.
@@ -1035,11 +1016,9 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given my club account is not linked to a club, When I log in, Then I am refused with "Your account is not linked to a club. Contact the s-CPD office".
 - EX2: Given the same lockout rules as R6 S1 AC4, When I enter a wrong password 5 times, Then the same block applies.
-- EX3: Given the first password given by the office is older than 7 days, When I log in, Then it no longer works and I must ask the office for a new one.
+- EX3: Given the first password given by the office is older than 7 days (assumed), When I log in, Then it no longer works and I must ask the office for a new one.
 
-
-## R6 S3 - Password reset 
-
+## R6 S3 - Password reset
 **Priority:** Nice to have
 
 **User story:** As a student, I want to reset my password if I forget it, so that I do not get locked out.
@@ -1051,14 +1030,14 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Exception cases**
 
-- EX1: Given the reset link is older than 30 minutes *(assumed)*, When I open it, Then I see "This link has expired" and can ask for a new one.
+- EX1: Given the reset link is older than 30 minutes (assumed), When I open it, Then I see "This link has expired" and can ask for a new one.
 - EX2: Given I already used the reset link, When I open it again, Then it does not work.
-- EX3: Given I ask for more than 3 reset emails in one hour *(assumed)*, When I ask again, Then the request is refused for 1 hour.
+- EX3: Given I ask for more than 3 reset emails in one hour (assumed), When I ask again, Then the request is refused for 1 hour.
 - EX4: Given my university email is deactivated and cannot receive mail, When I request a reset, Then I never receive it and the screen tells me to contact the s-CPD office with my student ID.
 - EX5: Given I reset my password, When it is saved, Then all my older sessions are signed out.
 - EX6: Given the new password is weaker than the rules in R6 S16 AC3, When I submit, Then I see a field error.
 
-## R6 S4 - Student screens only 
+## R6 S4 - Student screens only
 **Priority:** Must have
 
 **User story:** As a student, I want to see only the student screens, so that the app is simple and I do not see features that are not for me.
@@ -1072,8 +1051,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given I am a student and I open a link to a club screen, When the app opens it, Then I see "You do not have access" and the student home screen.
 - EX2: Given my role was changed in the backend while I was logged in, When I next open or refresh the app, Then the screens update to match my new role.
 
-## R6 S5 - Club screens 
-
+## R6 S5 - Club screens
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to see the club screens for my events, so that I can create events, run check-in and see attendance.
@@ -1088,7 +1066,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given my club account is suspended in the backend, When I open the app, Then I am signed out.
 
 ## R6 S6 - Student data privacy
-
 **Priority:** Must have
 
 **User story:** As a student, I want other students unable to see my bookings or points, so that my activity stays private.
@@ -1102,8 +1079,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a student changes the student ID in a request to another student's ID, When the request reaches the backend, Then it is denied and logged.
 - EX2: Given a club organiser views an attendance list, When it is shown, Then it shows only the name, student ID and status of students on that club's own events, and no points total or other bookings.
 
-## R6 S7 - Students cannot use club functions 
-
+## R6 S7 - Students cannot use club functions
 **Priority:** Must have
 
 **User story:** As a club organiser, I want students unable to use club functions, even with a modified app, so that nobody can create fake events or read my event codes.
@@ -1117,8 +1093,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a student is also a committee member in real life, When the student wants club access, Then a separate club account must be created by the s-CPD office; one account never has two roles.
 - EX2: Given a denied request is made, When it is denied, Then it is written to the audit log.
 
-## R6 S8 - Organiser limited to own club 
-
+## R6 S8 - Organiser limited to own club
 **Priority:** Must have
 
 **User story:** As a club organiser, I want to manage only my own club's events, so that other clubs cannot interfere with mine.
@@ -1132,23 +1107,21 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given club A and club B hold a joint event, When the s-CPD office links the event to both clubs in the backend, Then organisers of both clubs can see that event only.
 - EX2: Given a club account is replaced (R6 S15), When the old organiser sends a request, Then it is denied.
 
-## R6 S9 - Approvals and role changes only in backend 
-
+## R6 S9 - Approvals and role changes only in backend
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want event approvals and role changes done only in the backend, so that no one can give themselves higher access from a phone app.
 
 **Acceptance criteria**
 
-- AC1: Given any user in the app, When they try to approve an event or change a role, Then it is refused because those actions exist only in the backend.
+- AC1: Given any user in the app, When they try to approve an event or change a role, Then it is refused because those actions exist only in the backend (the admin tool in R6 S21).
 
 **Exception cases**
 
 - EX1: Given a user sends a hand-made request for an approval, When it reaches the backend, Then it is refused and logged.
 - EX2: Given an admin changes a role in the backend, When the change is saved, Then the change is written to the audit log with admin name, old role, new role, reason and time.
 
-## R6 S10 - Registration always creates student accounts 
-
+## R6 S10 - Registration always creates student accounts
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want only the s-CPD office to create club accounts, so that nobody can pretend to be a club.
@@ -1163,7 +1136,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given a request to register includes a "role" field set to club or admin, When the backend receives it, Then the field is ignored and a student account is made.
 - EX2: Given the office tries to link a club account to two clubs, When it saves, Then it is refused.
 
-## R6 S11 - Disable an account 
+## R6 S11 - Disable an account
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want to disable an account quickly, so that misuse can be stopped.
@@ -1178,9 +1151,7 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX2: Given the account is enabled again, When the user logs in, Then their earlier records and points are still there.
 - EX3: Given an account is disabled, When it is disabled, Then the action is logged with admin name, reason and time.
 
-
 ## R6 S12 - Safe sign out
-
 **Priority:** Must have
 
 **User story:** As a student, I want to be signed out safely when I log out or my session ends, so that a shared or lost phone does not expose my data.
@@ -1197,7 +1168,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX3: Given I log out, When the phone is checked, Then no password, token or personal data remains on the phone.
 
 ## R6 S13 - One phone per account
-
 **Priority:** Must have
 
 **User story:** As a student, I want my account to work for check-in on only one phone, so that no one else can check in as me from another device.
@@ -1209,11 +1179,11 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 **Exception cases**
 
-- EX1: Given I log in on a second phone, When I do, Then I can view my bookings and points but cannot check in until I move my account.
+- EX1: Given I log in on a second phone, When I do, Then I can view my bookings and points but cannot check in until I move my account (R4 S13).
 - EX2: Given two students share one phone, When the second student tries to register it, Then it is refused and the message tells them to contact the s-CPD office.
-- EX3: Given I reset my phone to factory settings, When I log in again, Then I must register it as a new phone.
-## R6 S14 - App lock
+- EX3: Given I reset my phone to factory settings, When I log in again, Then I must register it as a new phone (R6 S22).
 
+## R6 S14 - App lock
 **Priority:** Nice to have
 
 **User story:** As a student, I want to lock the app with my fingerprint or PIN, so that someone who picks up my phone cannot open it.
@@ -1226,10 +1196,9 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - EX1: Given my phone has no screen lock, When I try to turn on app lock, Then I am told to set up a screen lock first.
 - EX2: Given the app lock is turned on and I forget my fingerprint, When I use the phone PIN, Then I can continue.
-- EX3: Given a notification arrives while the app is locked, When it is shown, Then it does not show personal details (R5-NFR5).
+- EX3: Given a notification arrives while the app is locked, When it is shown, Then it does not show personal details (R5 NFR4).
 
 ## R6 S15 - Replace a club's organiser
-
 **Priority:** Nice to have
 
 **User story:** As an s-CPD admin, I want to change or remove a club's access when its organiser changes, so that former organisers cannot manage events.
@@ -1243,31 +1212,31 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX1: Given the former organiser has an event running, When access is replaced, Then the new organiser can continue the event and the old organiser's check-in screen stops issuing codes within 5 minutes of being online.
 - EX2: Given the replacement happens, When it is saved, Then it is logged with both names, reason and time.
 
-## R6 S16-Create a student account with university email
-
+## R6 S16 - Create a student account with university email
 **Priority:** Must have
 
 **User story:** As a new student, I want to create an account with my university email, so that I can book events and collect points.
 
 **Acceptance criteria**
 
-- AC1: Given I am on the registration screen, When I enter my university email, Then the app checks that the email has the university student domain *(domain to be confirmed with MDP partners)* and shows a field error if it does not.
+- AC1: Given I am on the registration screen, When I enter my university email, Then the app checks that the email has the university student domain (domain to be confirmed with MDP partners) and shows a field error if it does not.
 - AC2: Given the email is valid in format and domain, When I tap "Register", Then a verification code or link is sent to that email and the account stays inactive until it is used.
 - AC3: Given I enter my verification code or open the link within 24 hours, When it is correct, Then I set a password of at least 8 characters with a letter and a number and the account is activated as a student account (R6 S10).
-- AC4: Given the account is activated, When I log in the first time, Then I am asked for my study details before I can use any other screen.
+- AC4: Given the account is activated, When I log in the first time, Then I am asked for my study details (R6 S17) before I can use any other screen.
+- AC5: Given I register, When I tap "Register", Then I must accept the privacy notice and consent to the collection of my data and location for attendance (PDPA 2010) before the email is sent.
 
 **Exception cases**
 
 - EX1: Given the email already has an account, When I tap "Register", Then I see "This email is already registered. Log in or reset your password" and no second account is created.
 - EX2: Given the email domain is not the university domain (for example a personal email), When I tap "Register", Then I see a field error and no email is sent.
-- EX3: Given the verification is not completed within 24 hours, When I try to use it, Then I see "This link has expired" and can request a new one; an unverified account is deleted after 7 days .
+- EX3: Given the verification is not completed within 24 hours, When I try to use it, Then I see "This link has expired" and can request a new one; an unverified account is deleted after 7 days (assumed).
 - EX4: Given I enter the verification code wrongly 5 times, When I try again, Then I must request a new code.
 - EX5: Given I make a typing mistake in the email, When no email arrives, Then I can go back, correct the email and register again with no leftover account.
 - EX6: Given I am offline, When I try to register, Then I am told "Connect to the internet to register".
 - EX7: Given I close the app after verifying but before setting the password, When I open the app again, Then I can continue from the password step.
+- EX8: Given I do not accept the privacy notice, When I tap "Register", Then no account is created and no data is stored.
 
-## R6 S17-Study details to check the student is still enrolled
-
+## R6 S17 - Study details to check the student is still enrolled
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want each new student to give their year, degree and start year at registration, so that the system can work out whether the university email should still be active.
@@ -1288,7 +1257,6 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 - EX6: Given study details are self-reported and can be false, When an admin audits, Then the admin can compare them with the university student records, and false details can lead to deactivation.
 
 ## R6 S18 - Flag and deactivate accounts of graduated students
-
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want accounts of students whose study period has ended or whose university email is deactivated to be flagged and then deactivated, so that former students do not keep using the system.
@@ -1297,20 +1265,20 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - AC1: Given a student's expected end date is within 30 days, When the daily check runs, Then the student receives a warning (in-app and by email) and the account is marked "Ending soon".
 - AC2: Given the expected end date has passed, When the daily check runs, Then the account is flagged and appears in the admin list "Ended study period".
-- AC3: Given an account is flagged for 30 days *(assumed)* with no approved extension, When the check runs, Then the account is deactivated: the student cannot log in and sees "Your study period has ended. Contact the s-CPD office if this is wrong".
-- AC4: Given an account is deactivated, When it is saved, Then points history and attendance records are kept (not deleted) and stay available to authorised admins, in line with R5-NFR6.
+- AC3: Given an account is flagged for 30 days (assumed) with no approved extension, When the check runs, Then the account is deactivated: the student cannot log in and sees "Your study period has ended. Contact the s-CPD office if this is wrong".
+- AC4: Given an account is deactivated, When it is saved, Then points history and attendance records are kept (not deleted) and stay available to authorised admins, in line with R5 NFR5.
+- AC5: Given a student is logged in, When the app refreshes the login token, Then the server checks that the account is still active and the university email is not deactivated, and if not the student is signed out at that moment.
 
 **Exception cases**
 
-- EX1: Given the student's university email bounces or is reported deactivated, When the system gets a delivery failure 3 times *(assumed)*, Then the account is flagged and an admin is asked to confirm before deactivation.
+- EX1: Given the student's university email bounces or is reported deactivated, When the system gets a delivery failure 3 times (assumed), Then the account is flagged and an admin is asked to confirm before deactivation.
 - EX2: Given a student is wrongly flagged, When an admin approves the extension, Then the flag is removed, the new end date is saved with a reason, and the student is told.
 - EX3: Given the account is deactivated while the student has unsynced check-ins on a phone, When the phone goes online, Then R4 S8 EX3 applies.
 - EX4: Given a deactivated account has bookings for future events, When the account is deactivated, Then the bookings are cancelled and the places are released.
 - EX5: Given the same email address is later given to a different person, When that person registers, Then it is treated as a new account only after the admin has confirmed the old one is closed.
 - EX6: Given the daily check fails to run, When 24 hours have passed, Then the admin backend shows a warning.
 
-## R6 S19- Admin handling of flagged accounts
-
+## R6 S19 - Admin handling of flagged accounts
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want a list of flagged, ending and deactivated accounts with their reasons, so that I can approve, extend or close them in one place.
@@ -1319,14 +1287,14 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 
 - AC1: Given accounts are flagged, When I open the backend list, Then I see the student, reason (ended study, bounced email, flagged for cheating), date and status.
 - AC2: Given I approve an extension, deactivate or re-enable an account, When I confirm, Then the action is saved with my name, reason and time.
+- AC3: Given an account is flagged, When it enters the list, Then it shows a due date 5 working days later and overdue accounts move to the top.
 
 **Exception cases**
 
 - EX1: Given two admins act on the same account, When the second one confirms, Then they see the first decision and nothing is overwritten.
 - EX2: Given more than 100 accounts are flagged in one run, When the list opens, Then it can be filtered and handled in groups.
 
-## R6 S20-Audit log for access changes 
-
+## R6 S20 - Audit log for access changes
 **Priority:** Must have
 
 **User story:** As an s-CPD admin, I want every account creation, role change, disabling, deactivation and denied access attempt to be recorded, so that misuse and mistakes can be traced.
@@ -1339,6 +1307,43 @@ This file holds the user stories for all three actors (Student, Club Organiser, 
 **Exception cases**
 
 - EX1: Given the log cannot be written, When a sensitive action is requested, Then the action is not carried out and the admin sees an error.
-- EX2: Given the log is more than 2 years old, When the retention period ends, Then the entries are deleted or anonymised by an approved process, not by hand.
+- EX2: Given the log is more than 2 years old (assumed), When the retention period ends, Then the entries are deleted or anonymised by an approved process, not by hand.
 
+## R6 S21 - Admin tool
+**Priority:** Must have
+
+**User story:** As an s-CPD admin, I want a defined admin tool with clear inputs, outputs and an audit log, so that approvals, appeals and account actions can be done and tested.
+
+**Acceptance criteria**
+
+- AC1: Given I sign in to the admin tool with an admin account (the tool is separate from the student app), When I open it, Then I can approve or reject events, decide appeals and flagged records, disable or re-enable accounts, change roles, release a registered phone, and read the audit log.
+- AC2: Given I start any action, When I confirm, Then I must give the target (event, record or account) and a reason, and I see the result (done or error) and the new status.
+- AC3: Given I complete an action, When it is saved, Then an audit log entry is written (R6 S20).
+- AC4: Given an appeal or flagged record waits, When it is shown in the tool, Then it has a due date 5 working days after it was raised and overdue items are shown first.
+
+**Exception cases**
+
+- EX1: Given a user without the admin role tries to use the tool, When they sign in, Then access is denied and the attempt is logged.
+- EX2: Given the admin tool is not available, When a student or club uses the app, Then the app keeps working and only admin actions wait.
+- EX3: Given two admins act on the same item, When the second confirms, Then they see the first decision and nothing is overwritten.
+- EX4: Given an admin signs in, When they sign in, Then a second step (such as a one-time code) is required (assumed).
+
+## R6 S22 - First-time device registration
+**Priority:** Must have
+
+**User story:** As a student, I want my phone to be registered to my account the first time I log in, so that I can check in and my offline check-ins can be signed.
+
+**Acceptance criteria**
+
+- AC1: Given I log in online on a phone and my account has no registered phone, When I log in, Then the app creates a signing key in the phone's Keystore, sends only the public key to the server, and the phone is registered.
+- AC2: Given the phone is registered, When I check in offline, Then the record is signed with that key and the server checks the signature when it syncs (R4 S17 AC4).
+- AC3: Given the phone cannot create a secure key, When I log in, Then I am told check-in is not available on this phone and I can still view my bookings and points.
+
+**Exception cases**
+
+- EX1: Given the phone is already registered to a different account, When I try to register it, Then it is refused (R6 S13 AC1).
+- EX2: Given I am offline when I log in for the first time, When I try to register the phone, Then I see "Connect to the internet to register this phone" and cannot check in until I do.
+- EX3: Given my account already has a registered phone, When I log in on a second phone, Then R6 S13 EX1 and R4 S13 apply.
+- EX4: Given the signing key stops working (for example my screen lock was removed), When I open the app, Then I am asked to register the phone again and records signed with the old key are marked Needs review.
+- EX5: Given registration fails after the key was created, When I try again, Then only one phone is registered and no duplicate is created.
 
