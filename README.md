@@ -341,5 +341,66 @@ Room stores event details, bookings, the club's signed QR session data and pendi
 
 If the app closes or the phone loses power, atomic database transactions ensure a record is either saved completely or not saved. Unsynchronised records remain stored across app restarts.
 
-###Wireframes
+### Wireframes
+### 1. Student Login
+
+<p align="left">
+  <img src="docs/images/login%20page.png" alt="Student Login" width="200">
+  <img src="docs/images/invalid%20login.png" alt="Invalid Login" width="200">
+  <img src="docs/images/locked%20page.png" alt="Locked Page" width="200">
+</p>
+
+**What it does**
+
+This is the entry point for students to sign in using their university email and password. Inline validation highlights invalid inputs, while a generic “The email or password is incorrect” message protects account privacy. Consecutive failed attempts trigger a temporary lockout. Offline error handling directs students to contact the office.
+
+**User-friendly because**
+- **Simplicity:** Clearly labelled fields and a primary sign-in action focus on one task.
+- **Proximity:** Labels and validation messages appear beside their respective fields.
+- **Clear error feedback:** Input errors help students correct mistakes while generic authentication messages protect account privacy.
+- **Error recovery:** The offline message provides a clear next step.
+- **Security feedback:** The temporary lockout helps protect student accounts.
+
+### 2. Home Page
+
+<img src="docs/images/homepage.png" alt="Student Homepage" width="250">
+
+**What it does**
+
+The home page provides quick access to key features through labelled action buttons and a bottom navigation bar. Grouped functions apply the Gestalt principle of proximity, while the calendar and colour-coded attendance statuses help students track events and progress at a glance.
+
+**User-friendly because**
+- **Clear navigation:** Labelled buttons and consistent navigation help students find features.
+- **Proximity:** Grouped functions improve visual organisation.
+- **Visual hierarchy:** The calendar and attendance statuses highlight important information.
+- **Colour coding:** Status colours make event states easier to distinguish.
+- **Consistency:** Familiar layouts make the app easier to learn.
+
+### 3. Event Details
+
+<img src="docs/images/event%20details.png" alt="Event Details" width="250">
+
+**What it does**
+
+The event details page presents the date, time, location, available places and points awarded. Clear headings, grouped details and consistent colours improve readability.
+
+**User-friendly because**
+- **Visual hierarchy:** Headings help students identify key details quickly.
+- **Consistency:** Familiar colours and layouts make navigation predictable.
+- **Reduced cognitive load:** Essential information is available on one screen.
+- **Clear information:** Available places and points help students decide whether to attend.
+
+### 4. My Events
+
+<img src="docs/images/my%20events.png" alt="My Events" width="250">
+
+**What it does**
+
+The My Events page displays upcoming and past events, including dates, locations, points and booking statuses. Event cards, colour-coded labels and tabs make information easy to scan.
+
+**User-friendly because**
+- **Visual organisation:** Cards and colour-coded labels distinguish event information.
+- **Easy navigation:** Tabs separate upcoming and past events.
+- **Consistency:** A uniform layout makes event details easy to locate.
+- **Reduced cognitive load:** Key information is displayed at a glance.
 
