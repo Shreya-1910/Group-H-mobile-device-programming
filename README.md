@@ -667,3 +667,12 @@ Shows the live count (42 / 60 checked in) with a progress bar and a breakdown of
 - **Similarity:** the same status chips and colours are used across the whole app.
 - **Accessibility:** status uses colour, icon and word, never colour alone.
 - **Efficiency:** search and filters find a student fast at large events.
+
+### 13. Check-in scanner
+
+<img src="images/qrscanner_mobile_screen.png" alt="Check-in scanner" width="250">
+
+This page allows students to check in to an event by scanning a QR code. They can also see the event name, date, time, location, and approval status. The system checks whether the QR code is valid, expired, or has already been used. If the student is offline, the check-in record will be saved locally and synced when the internet connection is back. The simple layout helps students complete check-in quickly and easily. 
+
+### 14. Check-in result
+
