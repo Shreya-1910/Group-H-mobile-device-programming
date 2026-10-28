@@ -2,7 +2,7 @@
 
 **Owner:** Ziad
 
-**Figma:** [Design System page](https://www.figma.com/design/6z2DTyn9ipP83E4EA2nGPJ/MDP?node-id=194-1302&t=WtO7yMKTm3fSBXUz-4)
+**Figma:** [Design System](https://www.figma.com/design/6z2DTyn9ipP83E4EA2nGPJ/MDP?node-id=194-1302&t=WtO7yMKTm3fSBXUz-4)
 
 **Frame size:** Pixel 2 (411 × 731 dp)
 
