@@ -619,3 +619,51 @@ This is a read-only, time-ordered record of every admin and check-in action. Ent
 - **Proximity:** entries are grouped by day.
 - **Similarity:** the same status chips are used as elsewhere in the app.
 - **Show status:** who, what and when are visible for every action, which builds trust in attendance records.
+
+### 9. Club Login
+
+<img src="docs/images/club-login.png" alt="Club Login" width="250">
+
+**What it does:**
+This is the entry point for club organisers, separate from the student sign-in. Organisers sign in with their club's university email and password. A "Forgot password?" link offers recovery, and a note under the button states the lockout rule (15 minutes after too many failed attempts), so a locked account is never a surprise. A link at the bottom sends students to the correct sign-in.
+
+**User-friendly because**
+- **Simplicity:** one task, two fields, one primary action.
+- **Proximity:** each label sits directly above its field.
+- **Error prevention:** the lockout rule is shown before it happens.
+
+### 10. Create Event
+
+<img src="docs/images/create-event.png" alt="Create Event" width="250">
+
+**What it does:**
+Organisers fill in the event title, category, venue, start and end time, capacity and requested points. A banner explains that the event stays a Draft until it is submitted for approval. This frame shows the validation state: the points value is outside 1–10, so the field turns red with an inline message. Save draft and Submit are clearly separated.
+
+**User-friendly because**
+- **Clear error instructions:** the error appears directly under the field that caused it.
+- **Show status:** the Draft banner explains what happens before submission.
+- **Hierarchy:** Submit is the primary (filled) button and Save draft is secondary (outlined).
+
+### 11. Check-in Control
+
+<img src="docs/images/checkin-control.png" alt="Check-in Control" width="250">
+
+**What it does:**
+During the event, the organiser's phone shows a rotating QR code that students scan. A 6-character code is shown underneath as a fallback for broken cameras or the emulator. A countdown shows when the next code appears, so screenshots expire quickly. A green chip shows that check-in is open and when it closes, and a link shows how many students have checked in.
+
+**User-friendly because**
+- **Accessibility:** the typed code means no student is blocked by a camera problem.
+- **Show status:** the open/closes chip and countdown show exactly what is happening.
+- **Error prevention:** the rotating code stops old screenshots from working.
+
+### 12. Live Attendance
+
+<img src="docs/images/live-attendance.png" alt="Live Attendance" width="250">
+
+**What it does:**
+Shows the live count (42 / 60 checked in) with a progress bar and a breakdown of manual, needs-review and not-yet students. Organisers can search by name or student ID and filter the list. Each attendee shows a status chip: Checked in, Manual, Needs review or Not yet. Tapping a "Not yet" student lets the organiser mark them present with a reason.
+
+**User-friendly because**
+- **Similarity:** the same status chips and colours are used across the whole app.
+- **Accessibility:** status uses colour, icon and word, never colour alone.
+- **Efficiency:** search and filters find a student fast at large events.
