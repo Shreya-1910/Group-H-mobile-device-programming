@@ -1,10 +1,77 @@
 # Wireframes 
 
-## Ziad - Student discovery & booking 
+## Ziad - Club Organiser
 
 **Owner:** Ziad 
-**Figma:** [Admin Tool page](placeholder figma link)
-**Frame size:** Pixel 2 (411 × 731 dp)
+
+**Figma:** [Club Organiser screens](https://www.figma.com/design/6z2DTyn9ipP83E4EA2nGPJ/MDP?node-id=179-257&t=OnoQnPgdJWkkZ1N3-0) **Frame size:** Pixel 2 (411 × 731 dp)
+
+The Club Organiser screens let a club sign in, create events for approval, run a secure check-in session, and watch attendance live during the event.
+
+### Club journey
+
+`Club Login → Create Event → Check-in Control → Live Attendance`
+
+---
+
+### 1. Club Login
+
+<img src="images/club-login.png" width="200">
+
+**Frame:** `R6-S1 · Club login · Default`
+
+**What it does** This is the entry point for club organisers, separate from the student sign-in. Organisers sign in with their club's university email and password. A "Forgot password?" link offers recovery, and a note under the button states the lockout rule (15 minutes after too many failed attempts), so a locked account is never a surprise. A link at the bottom sends students to the correct sign-in.
+
+**User-friendly because**
+- **Simplicity:** one task, two fields, one primary action.
+- **Proximity:** each label sits directly above its field.
+- **Prevention:** the lockout rule is shown before it happens.
+
+---
+
+### 2. Create Event
+
+<img src="images/create-event.png" width="200">
+
+**Frame:** `R1-S1 · Create event · Validation error`
+
+**What it does** Organisers fill in the event title, category, venue, start and end time, capacity and requested points. A banner explains that the event stays a Draft until it is submitted for approval (R1). This frame shows the validation state: the points value is outside 1–10, so the field turns red with an inline message. **Save draft** and **Submit** are clearly separated.
+
+**User-friendly because**
+- **Clear error instructions:** the error appears directly under the field that caused it.
+- **Visibility of status:** the Draft banner explains what happens before submission.
+- **Hierarchy:** Submit is the primary (filled) button and Save draft is secondary (outlined).
+
+---
+
+### 3. Check-in Control
+
+<img src="images/checkin-control.png" width="200">
+
+**Frame:** `R3-S1 · Check-in control · Live QR`
+
+**What it does** During the event, the organiser's phone shows a rotating QR code that students scan (R3). A 6-character code is shown underneath as a fallback for broken cameras or the emulator. A countdown shows when the next code appears, so screenshots expire quickly. A green chip shows that check-in is open and when it closes, and a link shows how many students have checked in.
+
+**User-friendly because**
+- **Accessibility:** the typed code means no student is blocked by a camera problem.
+- **Visibility of status:** the open/closes chip and countdown show exactly what is happening.
+- **Security made visible:** the rotating code explains why old screenshots stop working.
+
+---
+
+### 4. Live Attendance
+
+<img src="images/live-attendance.png" width="200">
+
+**Frame:** `R3-S5 · Live attendance · Default`
+
+**What it does** Shows the live count (42 / 60 checked in) with a progress bar and a breakdown of manual, needs-review and not-yet students. Organisers can search by name or student ID and filter the list. Each attendee shows a status chip: Checked in, Manual, Needs review or Not yet. Tapping a "Not yet" student lets the organiser mark them present with a reason (R3-S6).
+
+**User-friendly because**
+- **Consistency:** the same status chips and colours are used across the whole app.
+- **Accessibility:** status uses colour + icon + word, never colour alone.
+- **Efficiency:** search and filters find a student fast at large events.
+
 
 ## Shuming - Student attendance & progress  
 
