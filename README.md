@@ -670,24 +670,24 @@ Shows the live count (42 / 60 checked in) with a progress bar and a breakdown of
 
 ### 13. Check-in scanner
 
-<img src="images/qrscanner_mobile_screen.png" alt="Check-in scanner" width="250">
+<img src="docs/images/qrscanner_mobile_screen.png" alt="Check-in scanner" width="250">
 
 This page allows students to check in to an event by scanning a QR code. They can also see the event name, date, time, location, and approval status. The system checks whether the QR code is valid, expired, or has already been used. If the student is offline, the check-in record will be saved locally and synced when the internet connection is back. The simple layout helps students complete check-in quickly and easily. 
 
 ### 14. Check-in result
 
-<img src="images/success_mobile_screen.png" alt="Check-in result" width="250">
+<img src="docs/images/success_mobile_screen.png" alt="Check-in result" width="250">
 
 This page shows students whether their check-in was successful. It displays the event details, check-in time, attendance status, and points earned. Students can immediately confirm that their attendance has been recorded. If something goes wrong, the system should explain the reason and tell them what to do next. There are also buttons to view their progress or return to the check-in page, making the process simple and clear. 
 
 ### 15. Points/progress
 
-<img src="images/checkin_mobile_ui%20.png" alt="Points and progress" width="250">
+<img src="docs/images/checkin_mobile_ui%20.png" alt="Points and progress" width="250">
 
 This page helps students track their participation and progress in club activities. It shows their total points, membership level, points needed to reach the next level, number of events attended, and attendance rate. Students can also view their recent activity and see how many points they earned from each event. Their points are only visible to themselves and authorised admins. The system also prevents points from being added twice or accidentally lost. 
 
 ### 16. Profile/notification
 
-<img src="images/profile_mobile_screen.png" alt="Profile and notifications" width="250">
+<img src="docs/images/profile_mobile_screen.png" alt="Profile and notifications" width="250">
 
 This page allows students to view their personal information, student ID, email address, and club membership. It also keeps all important notifications in one place, such as upcoming event reminders and points updates. Students can manage their notification preferences and access their account settings. To protect their privacy, notifications on the lock screen won't show event names or point amounts by default. Personal information is also protected so that only authorised users can access it. 
