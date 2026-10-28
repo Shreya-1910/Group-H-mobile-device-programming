@@ -1,31 +1,29 @@
 # Part 1 Report
 ## Table of Contents
-
-1. [Part 1 Report](https://github.com/Shreya-1910/mobile-device-programming#part-1-report)
-2. [Requirements Analysis (R1–R3)](https://github.com/Shreya-1910/mobile-device-programming#requirements-analysis-r1r3)
-3. [R4: Online and Offline](https://github.com/Shreya-1910/mobile-device-programming#r4-online-and-offline)
-4. [R5: Points and Progress](https://github.com/Shreya-1910/mobile-device-programming#r5-points-and-progress)
-5. [R6: Roles and Access](https://github.com/Shreya-1910/mobile-device-programming#r6-roles-and-access)
-6. [Non-Functional Requirements](https://github.com/Shreya-1910/mobile-device-programming#non-functional-requirements)
-7. [Attendance Security](https://github.com/Shreya-1910/mobile-device-programming#attendance-security-r3-r4)
-8. [Challenges and Assumptions](https://github.com/Shreya-1910/mobile-device-programming#challenges-and-assumptions)
-9. [Justification of Attendance Technology](https://github.com/Shreya-1910/mobile-device-programming#justification-of-attendance-technology)
-10. [Own Features](https://github.com/Shreya-1910/mobile-device-programming#own-features)
-11. [Architecture](https://github.com/Shreya-1910/mobile-device-programming#architecture)
-12. [Wireframes](https://github.com/Shreya-1910/mobile-device-programming#wireframes)
+1. [Requirements Analysis (R1–R3)](https://github.com/Shreya-1910/mobile-device-programming#requirements-analysis-r1r3)
+2. [R4: Online and Offline](https://github.com/Shreya-1910/mobile-device-programming#r4-online-and-offline)
+3. [R5: Points and Progress](https://github.com/Shreya-1910/mobile-device-programming#r5-points-and-progress)
+4. [R6: Roles and Access](https://github.com/Shreya-1910/mobile-device-programming#r6-roles-and-access)
+5. [Non-Functional Requirements](https://github.com/Shreya-1910/mobile-device-programming#non-functional-requirements)
+6. [Attendance Security](https://github.com/Shreya-1910/mobile-device-programming#attendance-security-r3-r4)
+7. [Challenges and Assumptions](https://github.com/Shreya-1910/mobile-device-programming#challenges-and-assumptions)
+8. [Justification of Attendance Technology](https://github.com/Shreya-1910/mobile-device-programming#justification-of-attendance-technology)
+9. [Own Features](https://github.com/Shreya-1910/mobile-device-programming#own-features)
+10. [Architecture](https://github.com/Shreya-1910/mobile-device-programming#architecture)
+11. [Wireframes](https://github.com/Shreya-1910/mobile-device-programming#wireframes)
 
 # Requirements Analysis (R1–R3)
 
-R1–R3 has 38 user stories (29 must-have, 9 nice-to-have), including 9 exceptional cases (⚠) and 10 cheating attempts (🛡). The key stories are below; all stories, acceptance criteria and NFRs are in [research.md](docs/research.md).
+R1–R3 has 38 user stories (29 must-have, 9 nice-to-have), including 9 exceptional cases and 10 cheating attempts. The key stories are below; all stories, acceptance criteria and NFRs are in [research.md](docs/research.md).
 
 ### R1 – Event Approval
 Events move **Draft → Pending → Approved / Rejected**. The s-CPD administrator decides in a separate admin tool.
 
 - **R1-S4 · Approve an event (Must):** *As an s-CPD administrator, I want to approve an event and confirm its points so that it is published.*
   Approval publishes the event and creates its check-in secret. Each decision is audit-logged and due within 5 working days.
-- **R1-S6 · ⚠ Editing locked after submission (Must):** *As a club organiser, I want to know a submitted event is locked so that I know how to change it.*
+- **R1-S6 · Editing locked after submission (Must):** *As a club organiser, I want to know a submitted event is locked so that I know how to change it.*
   No Edit button after submission. To change an event, the club cancels it and resubmits.
-- **R1-S7 · 🛡 Bypassing approval (Must):** *As the system, I want changes outside the workflow rejected so that clubs can't self-approve or inflate points.*
+- **R1-S7 · Bypassing approval (Must):** *As the system, I want changes outside the workflow rejected so that clubs can't self-approve or inflate points.*
   Security rules block changes to status, points, time or capacity after submission, even from a modified app.
 
 ### R2 – Marketplace and Booking
@@ -33,9 +31,9 @@ Students find events through search, filters and a "For you" row.
 
 - **R2-S4 · Book a place (Must):** *As a student, I want one-tap booking so that my place is guaranteed.*
   A server transaction reserves exactly one place. Booking closes 2 h before the start.
-- **R2-S5 · ⚠ Event full (Must):** *As a student, I want a waitlist for full events so that I can attend if someone cancels.*
+- **R2-S5 · Event full (Must):** *As a student, I want a waitlist for full events so that I can attend if someone cancels.*
   When a place frees up, the first student in line is booked automatically and notified.
-- **R2-S7 · ⚠ Booking clash (Must):** *As a student, I want overlapping bookings flagged so that I don't double-book.*
+- **R2-S7 · Booking clash (Must):** *As a student, I want overlapping bookings flagged so that I don't double-book.*
   I can keep my booking or swap in one step, and the server rejects overlaps.
 
 ### R3 – Secure Attendance
@@ -43,9 +41,9 @@ The club's phone shows a **signed QR code that changes every 15 s** (valid ≤ 3
 
 - **R3-S2 · Scan to check in (Must):** *As a student, I want to check in within seconds so that I don't hold up the queue.*
   The result appears within 2 s: **Verified** online, or **Pending** (saved on the phone, synced later) offline.
-- **R3-S7 · 🛡 Screenshot sent to an absent friend (Must):** *As the system, I want copied codes to expire quickly so that nobody checks in from home.*
+- **R3-S7 · Screenshot sent to an absent friend (Must):** *As the system, I want copied codes to expire quickly so that nobody checks in from home.*
   Online, a code works for only 30 s. Offline records must match the club's session log. **Known weakness:** a live code forwarded and scanned offline can pass, so it's only flagged by location or a scan count above headcount.
-- **R3-S10 · 🛡 Checking in for a friend (Must):** *As the system, I want each check-in tied to one student and device so that nobody checks in others.*
+- **R3-S10 · Checking in for a friend (Must):** *As the system, I want each check-in tied to one student and device so that nobody checks in others.*
   Each check-in is limited to one per device per event and signed by the student's registered phone key. **Weakness:** a friend carrying the student's own unlocked phone.
 
 # R4: Online and Offline
@@ -425,7 +423,7 @@ If the app closes or the phone loses power, atomic database transactions ensure 
 
 **What it does:**
 
-This is the entry point for students to sign in using their university email and password. Inline validation highlights invalid inputs, while a generic “The email or password is incorrect” message protects account privacy. Consecutive failed attempts trigger a temporary lockout. Offline error handling directs students to contact the office.
+This is the entry point for students to sign in using their university email and password. Inline validation highlights invalid inputs, while a generic “The email or password is incorrect” message protects account privacy. Consecutive failed attempts trigger a temporary lockout. Offline error handling directs students to contact the office. Gestalt principles were applied to improve the page’s user-friendliness by organising elements into clear visual groups and creating an intuitive, consistent layout
 
 **User-friendly because**
 - **Simplicity:** Clearly labelled fields and a primary sign-in action focus on one task.
