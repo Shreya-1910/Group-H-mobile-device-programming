@@ -31,11 +31,10 @@ The Admin Tool lets staff sign in securely, review club event submissions, resol
 
 ### 1. Admin Login
 **Frame:** `R6-S1 · Admin login · Error`
-
-
+<img src="images/admin-login.png" alt="Admin Login" width="200">
 
 **What it does**
-This is the entry point for staff, and it separates admins from student users. Admins sign in with their staff email and password, or with University SSO as a one-tap alternative. If a login fails, the password field turns red and an inline message explains the problem and how many attempts are left. A "Forgot password?" link offers recovery. The footer reminds admins that all actions are recorded in the audit log.
+This is the entry point for staff, and it separates admins from student users. Admins sign in with their staff email and password, or with University SSO as a one-tap alternative. If a login fails, the password field turns red and an inline message explains the problem and how many attempts are left (“Incorrect email or password. 2 attempts left.”), so the admin knows what went wrong before being locked out. A “Forgot password?” link offers recovery. The footer reminds admins that every action is recorded in the audit log, which makes the screen’s purpose and level of accountability clear from the start. 
 
 **User-friendly because**
 - **Simplicity:** one task, two fields, one primary action.
@@ -46,10 +45,10 @@ This is the entry point for staff, and it separates admins from student users. A
 
 ### 2. Approval Queue
 **Frame:** `R1-S1 · Approval queue · Default`
-
+<img src="images/approval-queue.png" alt="Approval Queue" width="200">
 
 **What it does**
-This is the admin's home screen, where clubs' submitted events are reviewed before students can book them. Summary cards show the workload at a glance (Pending, Needs review, Approved today). Filter chips narrow the list by request type. Each card shows the event details, the submitting club, the points and a status chip. Approve and Reject buttons sit directly under each card. Rejecting asks for a reason before confirming.
+This is the admin’s home screen, where clubs’ submitted events are reviewed before students can book them. Three summary cards at the top show the workload at a glance: 8 pending, 3 needing review, and 21 approved today. Each count is colour-coded to match its status. Filter chips narrow the list to Events, Club requests or Points claims. Each request card shows the event name, the submitting club, the date, time, venue and points, plus a status chip. Approve and Reject buttons sit directly under the card they act on. Flagged items explain why they need attention, such as “Venue clash with another event.” Rejecting opens a confirmation sheet that asks for a reason, which prevents accidental rejections and gives the club feedback. 
 
 **User-friendly because**
 - **Similarity:** every request uses the same card and colour-coded status chip.
@@ -60,11 +59,11 @@ This is the admin's home screen, where clubs' submitted events are reviewed befo
 ---
 
 ### 3. Accounts & Appeals
-**Frame:** `R6-S2 · Account & appeals · Default`
-
+**Frame:** `R6-S2 · Accounts & appeals · Default`
+<img src="images/accounts-appeals.png" alt="Accounts & Appeals" width="200">
 
 **What it does**
-This screen manages student accounts and the appeals they raise. Tabs switch between Accounts and Appeals, and the Appeals tab shows how many are pending. Each appeal card groups the student's details, their reason, a status chip and when it was submitted. The actions are specific to each case, such as "Grant +3 pts" or "Restore account". A "Recently resolved" section confirms completed decisions.
+This screen handles student accounts and the appeals they raise. Tabs switch between all accounts and pending appeals, and the Appeals tab shows its count, “(2)”. Each appeal card groups the student’s initials, name, ID and club with their reason, a status chip and when it was submitted. The actions are specific to each case: “Grant +3 pts” restores missed attendance points, and “Restore account” lifts a suspension. Every card also has a “Deny” option. Granting opens a confirmation explaining exactly what will change. A “Recently resolved” section confirms completed actions, so admins can see their decisions took effect. 
 
 **User-friendly because**
 - **Figure-ground:** white cards on a grey background separate each appeal.
@@ -76,10 +75,10 @@ This screen manages student accounts and the appeals they raise. Tabs switch bet
 
 ### 4. Audit Log
 **Frame:** `R3-S1 · Audit log · Default`
-
+<img src="images/audit-log.png" alt="Audit Log" width="200">
 
 **What it does**
-This is a read-only, time-ordered record of every admin and check-in action. Entries are grouped by day along a timeline, and each one shows who did what, when, and the outcome. Suspicious check-ins, such as a QR code scanned outside the event location, are flagged for review. Admins can search, filter by action type, and export the log as CSV.
+This is a read-only, time-ordered record of every admin and check-in action, supporting the app’s secure attendance requirement. Entries are grouped by day and linked by a vertical timeline. Each entry states who did what, when, and the outcome as a colour-coded chip. Suspicious activity, such as a QR code scanned outside the event location, is flagged for review. Admins can search, filter by action type, and export the log as CSV for reporting. Because nothing here can be edited, admins and markers can trust the records, which keeps approvals, appeals and attendance transparent. 
 
 **User-friendly because**
 - **Continuity:** the timeline leads the eye through events in order.
@@ -87,8 +86,7 @@ This is a read-only, time-ordered record of every admin and check-in action. Ent
 - **Similarity:** the same status chips are used as elsewhere in the app.
 - **Show status:** who, what and when are visible for every action, which builds trust in attendance records.
 
----
-
+--- 
 ### Prototype flow
 - **Sign in** → Approval Queue
 - **Reject** → reason bottom sheet → back to the queue
