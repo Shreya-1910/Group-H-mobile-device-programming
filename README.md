@@ -1,4 +1,29 @@
 # Part 1 Report
+
+## Requirements Analysis (R1–R3)
+
+Full user stories, acceptance criteria and NFRs: [research.md](docs/research.md). R1–R3 has 38 stories (29 must-have, 9 nice-to-have), including 9 exceptional cases (⚠) and 10 cheating attempts (🛡).
+
+### R1 – Event Approval (11 stories)
+Clubs create an event as a **Draft** and submit it for approval (**Pending**). The s-CPD administrator approves or rejects it in a separate admin tool, with a reason, an audit log entry and a 5-working-day target.
+- **Can a club edit after approval?** No. Events lock on submission, and backend security rules enforce this, even against a modified app. To change an event, the club cancels it and resubmits.
+- **Exceptional cases:** unreviewed events **Expire** at their start time, and drafts are kept offline.
+
+### R2 – Marketplace and Booking (13 stories)
+- **Finding events:** search, filters (category, date, points, club, availability) and a "For you" row.
+- **Booking:** one tap, as a server transaction, so capacity is never exceeded. Booking closes 2 h before the start.
+- **Full event:** students join a waitlist, and the first in line is booked automatically when a place frees up. If two students take the last place at once, exactly one succeeds.
+- **Clash:** overlapping bookings are blocked, with a one-step swap.
+- **No-shows:** recorded only after the 72 h offline-sync deadline, so genuine attendees aren't penalised.
+
+### R3 – Secure Attendance (14 stories)
+The club's phone shows a **signed QR code that changes every 15 s** (valid ≤ 30 s), with a **6-digit fallback code** that also works on the emulator. The server checks the signature, the time window (event start to 15 min after it ends), the booking, the registered device and duplicates. Offline check-ins are checked against the club's session log of code displays.
+- **Blocked:** screenshots sent home, forged codes, late check-ins, changed phone clocks, and checking in a friend from your own phone.
+- **Flagged for review:** walk-ins without a booking and suspicious locations. Manual check-ins are audited.
+- **Known weaknesses:** the design can't prove *who* holds the phone or *when* an offline scan happened, so a code relayed live to an absent student can pass. These cases are made harder and traceable, not impossible. See the [attendance security analysis](docs/attendance-security.md).
+
+Every check-in has one status from a single state machine: Pending, Syncing, Verified, Needs review, Rejected or Couldn't sync.
+
 # R4: Online and Offline
 
 ## R4 S1 – Offline check-in
@@ -69,6 +94,7 @@
 - EX1: Given I reconnect, When the event has ended, Then the session log of code displays uploads so student scans can be verified.
 
 # R5: Points and Progress
+
 
 ## R5 S1 – Total and history
 **Priority:** Must have
@@ -350,7 +376,7 @@ If the app closes or the phone loses power, atomic database transactions ensure 
   <img src="docs/images/locked%20page.png" alt="Locked Page" width="200">
 </p>
 
-**What it does**
+**What it does:**
 
 This is the entry point for students to sign in using their university email and password. Inline validation highlights invalid inputs, while a generic “The email or password is incorrect” message protects account privacy. Consecutive failed attempts trigger a temporary lockout. Offline error handling directs students to contact the office.
 
@@ -365,7 +391,7 @@ This is the entry point for students to sign in using their university email and
 
 <img src="docs/images/homepage.png" alt="Student Homepage" width="250">
 
-**What it does**
+**What it does:**
 
 The home page provides quick access to key features through labelled action buttons and a bottom navigation bar. Grouped functions apply the Gestalt principle of proximity, while the calendar and colour-coded attendance statuses help students track events and progress at a glance.
 
@@ -404,3 +430,53 @@ The My Events page displays upcoming and past events, including dates, locations
 - **Consistency:** A uniform layout makes event details easy to locate.
 - **Reduced cognitive load:** Key information is displayed at a glance.
 
+### 5. Admin Tool
+
+<img src="docs/images/admin-login.png" alt="Admin Login" width="250">
+
+**What it does:**
+This is the entry point for staff, and it separates admins from student users. Admins sign in with their staff email and password, or with University SSO as a one-tap alternative. If a login fails, the password field turns red and an inline message explains the problem and how many attempts are left. A "Forgot password?" link offers recovery. The footer reminds admins that all actions are recorded in the audit log.
+
+**User-friendly because**
+- **Simplicity:** one task, two fields, one primary action.
+- **Proximity:** each label sits directly above its field.
+- **Clear error instructions:** the error says what went wrong and how many attempts are left.
+
+### 6. Approval Queue
+
+<img src="docs/images/approval-queue.png" alt="Approval Queue" width="250">
+
+**What it does:**
+This is the admin's home screen, where clubs' submitted events are reviewed before students can book them. Summary cards show the workload at a glance (Pending, Needs review, Approved today). Filter chips narrow the list by request type. Each card shows the event details, the submitting club, the points and a status chip. Approve and Reject buttons sit directly under each card. Rejecting asks for a reason before confirming.
+
+**User-friendly because**
+- **Similarity:** every request uses the same card and colour-coded status chip.
+- **Show status:** the counts at the top give an instant overview.
+- **Proximity:** the actions sit directly under the item they affect.
+- **Error prevention:** a reject confirmation with a required reason.
+
+### 7. Accounts & Appeals 
+
+<img src="docs/images/accounts-appeals.png" alt="Accounts and Appeals" width="250">
+
+**What it does:**
+This screen manages student accounts and the appeals they raise. Tabs switch between Accounts and Appeals, and the Appeals tab shows how many are pending. Each appeal card groups the student's details, their reason, a status chip and when it was submitted. The actions are specific to each case, such as "Grant +3 pts" or "Restore account". A "Recently resolved" section confirms completed decisions.
+
+**User-friendly because**
+- **Figure-ground:** white cards on a grey background separate each appeal.
+- **Proximity:** the reason, status and decision are grouped in one card.
+- **Consistency:** the same buttons and chips are used across the app.
+- **Clear feedback:** a confirmation states exactly what will change.
+
+### 8. Audit Log 
+
+<img src="docs/images/audit-log.png" alt="Audit Log" width="250">
+
+**What it does:**
+This is a read-only, time-ordered record of every admin and check-in action. Entries are grouped by day along a timeline, and each one shows who did what, when, and the outcome. Suspicious check-ins, such as a QR code scanned outside the event location, are flagged for review. Admins can search, filter by action type, and export the log as CSV.
+
+**User-friendly because**
+- **Continuity:** the timeline leads the eye through events in order.
+- **Proximity:** entries are grouped by day.
+- **Similarity:** the same status chips are used as elsewhere in the app.
+- **Show status:** who, what and when are visible for every action, which builds trust in attendance records.
