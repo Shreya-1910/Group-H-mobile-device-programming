@@ -86,9 +86,3 @@ Reusable building blocks used across every screen. Components with several versi
 - **Cards:** Stat tile · Points progress card · Details card
 - **List rows:** Attendee · Settings · Activity · Audit entry
 - **Small elements:** Avatar · Progress bar · Notification item · Android status bar
-
-**Rules:** every component follows the same three rules.
-
-- **Touch targets** are at least 48 dp (buttons, fields, navigation items).
-- **One primary button per screen.** Secondary actions use the outlined style, and destructive actions use red.
-- **Spacing:** 16 dp screen margins, 8 dp corner radius on buttons and fields, and 12 dp on cards.
