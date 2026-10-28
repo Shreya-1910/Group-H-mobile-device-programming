@@ -12,9 +12,66 @@
 **Frame size:** Pixel 2 (411 × 731 dp)
 
 ## Shreya - Club organiser   
+### 1. Student Login
 
-**Figma:** [Admin Tool page](placeholder figma link)
-**Frame size:** Pixel 2 (411 × 731 dp)
+
+  <img src="images/login%20page.png" alt="Student Login" width="200">
+  <img src="images/invalid%20login.png" alt="Invalid Login" width="200">
+   <img src="images/locked%20page.png" alt="Locked Page" width="200">
+ 
+
+**What it does**
+
+This is the entry point for students, allowing them to sign in using their university email and password before accessing their respective screens. Inline validation highlights invalid inputs, while a generic “The email or password is incorrect” message prevents the system from revealing whether an account exists.After consecutive failed login attempts, the account is temporarily locked. The screen also supports offline error handling, displaying a message directing students to contact the office.
+
+**User-friendly because**
+- **Simplicity:** The screen focuses on one task, with clearly labelled fields and a primary sign-in action.
+- **Proximity:** Labels and validation messages appear close to their respective fields, making errors easier to identify and correct.
+- **Clear error feedback:** Specific input errors help students correct mistakes, while the generic authentication message protects account privacy.
+- **Error recovery:** The offline message provides a clear next step when students cannot sign in due to connectivity issues.
+- **Security feedback:** The temporary lockout communicates the consequence of repeated failed attempts, helping protect student accounts.
+
+
+### 2. Home Page
+<img src="images/homepage.png" alt="Student Homepage" width="250">
+
+**What it does**
+
+The home page provides quick access to key features through clearly labelled action buttons and a bottom navigation bar. Related functions are grouped together, applying the Gestalt principle of proximity to improve visual organisation and usability. The calendar and colour-coded attendance statuses allow students to identify upcoming events and track their progress at a glance.
+
+**User-friendly because**
+- **Clear navigation:** Clearly labelled action buttons and a consistent bottom navigation bar help students find features easily.
+- **Proximity:** Grouping related functions together makes the interface easier to understand and reduces the effort required to locate information.
+- **Visual hierarchy:** The calendar and attendance statuses make important information easy to identify at a glance.
+- **Colour coding:** Different attendance statuses help students distinguish between event states quickly without having to read lengthy descriptions.
+- **Consistency:** Reusing familiar navigation elements and visual patterns across screens makes the application easier to learn and use.
+
+### 3. Events detail
+<img src="images/event%20details.png" alt="Event Details" width="250">
+
+**What it does**
+
+The event details page clearly presents key information, including the date, time, location, available places, and points awarded. Grouped details, distinct headings, and consistent colours improve readability, while simple navigation makes the page easy to use.
+
+**User-friendly because**
+- **Visual hierarchy:** Distinct headings and organised information help students identify important event details quickly.
+- **Consistency:** Consistent colours and layout make the interface predictable and easier to navigate.
+- **Reduced cognitive load:** Presenting all essential information on one screen minimises the need to navigate between pages to make decisions.
+- **Clear information:** Displaying available places and points upfront helps students decide whether to attend an event.
+
+### 4. My Events
+<img src="images/my%20events.png" alt="My Events" width="250">
+
+**What it does**
+
+The My Events page displays upcoming and past events with clear details, including dates, locations, points, and booking statuses. Distinct cards, colour-coded labels, and tabs help users quickly identify information and navigate the page easily.
+
+**User-friendly because**
+- **Visual organisation:** Separate event cards and colour-coded labels make information easier to scan and distinguish.
+- **Easy navigation:** Tabs allow students to switch between upcoming and past events without searching through a single long list.
+- **Consistency:** A consistent layout helps students locate event details and booking statuses quickly.
+- **Reduced cognitive load:** Presenting key information at a glance minimises the effort needed to track event participation.
+
 
 ## Sanjanaah — Admin Tool
 
