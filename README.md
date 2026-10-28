@@ -674,11 +674,21 @@ Shows the live count (42 / 60 checked in) with a progress bar and a breakdown of
 
 This page allows students to check in to an event by scanning a QR code. They can also see the event name, date, time, location, and approval status. The system checks whether the QR code is valid, expired, or has already been used. If the student is offline, the check-in record will be saved locally and synced when the internet connection is back. The simple layout helps students complete check-in quickly and easily. 
 
+**User-friendly because**
+- **Guidance:** clear scanning frame and text prompts explicitly direct user action.  
+- **Visiblity:** event details, location, and approval status are displayed in one view.   
+- **Feedback:** immediate system validation handles expired, invalid, or duplicate QR codes.   
+
 ### 14. Check-in result
 
 <img src="docs/images/success_mobile_screen.png" alt="Check-in result" width="250">
 
 This page shows students whether their check-in was successful. It displays the event details, check-in time, attendance status, and points earned. Students can immediately confirm that their attendance has been recorded. If something goes wrong, the system should explain the reason and tell them what to do next. There are also buttons to view their progress or return to the check-in page, making the process simple and clear. 
+
+**User-friendly because**
+- **Clarity:** event details and exact check-in time (2:05 PM) are clearly displayed for immediate verification.
+- **Rewards:** (+3 points, 1 event attended) metrics provide instant positive encouragement.   
+- **Next Steps:** primary and secondary buttons ("View My Progress", "Back to Check-in") guide clear actions after check-in. 
 
 ### 15. Points/progress
 
@@ -686,8 +696,18 @@ This page shows students whether their check-in was successful. It displays the 
 
 This page helps students track their participation and progress in club activities. It shows their total points, membership level, points needed to reach the next level, number of events attended, and attendance rate. Students can also view their recent activity and see how many points they earned from each event. Their points are only visible to themselves and authorised admins. The system also prevents points from being added twice or accidentally lost. 
 
+**User-friendly because**
+- **Transparency:** event details and exact check-in time (2:05 PM) are clearly displayed for immediate verification.
+- **Visual Hierarchy:** (+3 points, 1 event attended) metrics provide instant positive encouragement.   
+- **Gamification:** progress bar ("80%", "80 points to Gold") and tier badges ("Silver Member") motivate continuous participation.
+  
 ### 16. Profile/notification
 
 <img src="docs/images/profile_mobile_screen.png" alt="Profile and notifications" width="250">
 
 This page allows students to view their personal information, student ID, email address, and club membership. It also keeps all important notifications in one place, such as upcoming event reminders and points updates. Students can manage their notification preferences and access their account settings. To protect their privacy, notifications on the lock screen won't show event names or point amounts by default. Personal information is also protected so that only authorised users can access it. 
+
+**User-friendly because**
+- **Information Architecture:** account details and notification preferences are neatly organized into clear, clickable rows.
+- **Contextual Reminders:** notification cards clearly communicate event timing and point rewards with relative timestamps ("10 minutes ago").    
+- **Notification Visibility:** unread notification counter badge ("2 new") immediately alerts the user to recent updates.
