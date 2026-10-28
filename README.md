@@ -1,28 +1,38 @@
 # Part 1 Report
 
-## Requirements Analysis (R1–R3)
+# Requirements Analysis (R1–R3)
 
-Full user stories, acceptance criteria and NFRs: [research.md](docs/research.md). R1–R3 has 38 stories (29 must-have, 9 nice-to-have), including 9 exceptional cases (⚠) and 10 cheating attempts (🛡).
+R1–R3 has 38 user stories (29 must-have, 9 nice-to-have), including 9 exceptional cases (⚠) and 10 cheating attempts (🛡). The key stories are below; all stories, acceptance criteria and NFRs are in [research.md](docs/research.md).
 
-### R1 – Event Approval (11 stories)
-Clubs create an event as a **Draft** and submit it for approval (**Pending**). The s-CPD administrator approves or rejects it in a separate admin tool, with a reason, an audit log entry and a 5-working-day target.
-- **Can a club edit after approval?** No. Events lock on submission, and backend security rules enforce this, even against a modified app. To change an event, the club cancels it and resubmits.
-- **Exceptional cases:** unreviewed events **Expire** at their start time, and drafts are kept offline.
+### R1 – Event Approval
+Events move **Draft → Pending → Approved / Rejected**. The s-CPD administrator decides in a separate admin tool.
 
-### R2 – Marketplace and Booking (13 stories)
-- **Finding events:** search, filters (category, date, points, club, availability) and a "For you" row.
-- **Booking:** one tap, as a server transaction, so capacity is never exceeded. Booking closes 2 h before the start.
-- **Full event:** students join a waitlist, and the first in line is booked automatically when a place frees up. If two students take the last place at once, exactly one succeeds.
-- **Clash:** overlapping bookings are blocked, with a one-step swap.
-- **No-shows:** recorded only after the 72 h offline-sync deadline, so genuine attendees aren't penalised.
+- **R1-S4 · Approve an event (Must):** *As an s-CPD administrator, I want to approve an event and confirm its points so that it is published.*
+  Approval publishes the event and creates its check-in secret. Each decision is audit-logged and due within 5 working days.
+- **R1-S6 · ⚠ Editing locked after submission (Must):** *As a club organiser, I want to know a submitted event is locked so that I know how to change it.*
+  No Edit button after submission. To change an event, the club cancels it and resubmits.
+- **R1-S7 · 🛡 Bypassing approval (Must):** *As the system, I want changes outside the workflow rejected so that clubs can't self-approve or inflate points.*
+  Security rules block changes to status, points, time or capacity after submission, even from a modified app.
 
-### R3 – Secure Attendance (14 stories)
-The club's phone shows a **signed QR code that changes every 15 s** (valid ≤ 30 s), with a **6-digit fallback code** that also works on the emulator. The server checks the signature, the time window (event start to 15 min after it ends), the booking, the registered device and duplicates. Offline check-ins are checked against the club's session log of code displays.
-- **Blocked:** screenshots sent home, forged codes, late check-ins, changed phone clocks, and checking in a friend from your own phone.
-- **Flagged for review:** walk-ins without a booking and suspicious locations. Manual check-ins are audited.
-- **Known weaknesses:** the design can't prove *who* holds the phone or *when* an offline scan happened, so a code relayed live to an absent student can pass. These cases are made harder and traceable, not impossible. See the [attendance security analysis](docs/attendance-security.md).
+### R2 – Marketplace and Booking
+Students find events through search, filters and a "For you" row.
 
-Every check-in has one status from a single state machine: Pending, Syncing, Verified, Needs review, Rejected or Couldn't sync.
+- **R2-S4 · Book a place (Must):** *As a student, I want one-tap booking so that my place is guaranteed.*
+  A server transaction reserves exactly one place. Booking closes 2 h before the start.
+- **R2-S5 · ⚠ Event full (Must):** *As a student, I want a waitlist for full events so that I can attend if someone cancels.*
+  When a place frees up, the first student in line is booked automatically and notified.
+- **R2-S7 · ⚠ Booking clash (Must):** *As a student, I want overlapping bookings flagged so that I don't double-book.*
+  I can keep my booking or swap in one step, and the server rejects overlaps.
+
+### R3 – Secure Attendance
+The club's phone shows a **signed QR code that changes every 15 s** (valid ≤ 30 s), with a 6-digit fallback code. The server checks the signature, time window, booking, registered device and duplicates.
+
+- **R3-S2 · Scan to check in (Must):** *As a student, I want to check in within seconds so that I don't hold up the queue.*
+  The result appears within 2 s: **Verified** online, or **Pending** (saved on the phone, synced later) offline.
+- **R3-S7 · 🛡 Screenshot sent to an absent friend (Must):** *As the system, I want copied codes to expire quickly so that nobody checks in from home.*
+  Online, a code works for only 30 s. Offline records must match the club's session log. **Known weakness:** a live code forwarded and scanned offline can pass, so it's only flagged by location or a scan count above headcount.
+- **R3-S10 · 🛡 Checking in for a friend (Must):** *As the system, I want each check-in tied to one student and device so that nobody checks in others.*
+  Each check-in is limited to one per device per event and signed by the student's registered phone key. **Weakness:** a friend carrying the student's own unlocked phone.
 
 # R4: Online and Offline
 
@@ -242,6 +252,29 @@ Every check-in has one status from a single state machine: Pending, Syncing, Ver
 - **Security:** Enforce role-based access and reject forged, expired, duplicate and out-of-window check-ins; encrypt sensitive data.
 - **Accessibility and compatibility:** WCAG 2.1 AA, TalkBack, 48dp minimum touch targets and Android 12+; support portrait and landscape.
 - **Audit and retention:** Log administrative and attendance actions; retain and delete personal data according to PDPA requirements.
+
+# Attendance Security (R3, R4)
+
+Each check-in must pass five server checks:
+- a **signed code** (HMAC with a per-event secret that students never receive);
+- a **time window** read from the code, not the phone clock;
+- a **booking**;
+- a **registered phone** (Keystore-signed record);
+- **one record per student per event**.
+
+This blocks remote, late, forged and replayed check-ins. Cheating by people in the room is made difficult and auditable rather than impossible.
+
+| Attack | How it's prevented | What remains |
+|---|---|---|
+| Screenshot sent to an absent friend | The code changes every 15 s and is valid for ≤ 30 s | A code relayed live within 30 s |
+| Same, but scanned **offline** | The code must appear in the club's session log | Can pass, so it's caught only by the location flag or by scans exceeding the headcount |
+| Checking in a friend | One registered phone per account, one check-in per device per event, optional fingerprint/PIN | A friend carrying the student's own unlocked phone |
+| Late check-in or changed phone clock | The server checks the signed time window | None significant |
+| Forged, guessed or edited codes and records | HMAC signing; lock after 5 wrong codes; signed offline records | A club member leaking the secret (one event only) |
+| Modified app or direct API calls | Firestore rules and Cloud Functions, with automated tests | Rule mistakes, caught by the tests |
+| Walk-ins and club favouritism | Walk-ins held as Needs review; manual marks audit-logged and flagged above 20% | Collusion is made visible, not stopped |
+
+**Honest limits:** a QR code proves a registered phone saw a genuine code. It can't prove who is holding the phone, or when an offline scan happened. These cases are flagged for review, not silently accepted. All 14 attacks are in the [full analysis](docs/attendance-security.md).
 
 # Challenges and Assumptions
 
