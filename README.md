@@ -10,7 +10,8 @@
 8. [Justification of Attendance Technology](https://github.com/Shreya-1910/mobile-device-programming#justification-of-attendance-technology)
 9. [Own Features](https://github.com/Shreya-1910/mobile-device-programming#own-features)
 10. [Architecture](https://github.com/Shreya-1910/mobile-device-programming#architecture)
-11. [Wireframes](https://github.com/Shreya-1910/mobile-device-programming#wireframes)
+11. [Design System](https://www.figma.com/design/6z2DTyn9ipP83E4EA2nGPJ/MDP?node-id=194-1302&t=WtO7yMKTm3fSBXUz-4)
+12. [Wireframes](https://github.com/Shreya-1910/mobile-device-programming#wireframes)
 
 # Requirements Analysis (R1–R3)
 
