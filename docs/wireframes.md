@@ -6,7 +6,7 @@
 **Figma:** [Admin Tool page](placeholder figma link)
 **Frame size:** Pixel 2 (411 × 731 dp)
 
-## Mark - Student attendance & progress  
+## Shuming - Student attendance & progress  
 
 **Figma:** ([Student attendance & progress](https://www.figma.com/design/6z2DTyn9ipP83E4EA2nGPJ/MDP?node-id=77-502&t=LcMUeLHuAlxcqu2p-4))
 **Frame size:** Pixel 2 (411 × 731 dp)
