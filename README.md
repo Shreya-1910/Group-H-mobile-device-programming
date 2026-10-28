@@ -285,39 +285,8 @@ QR codes can still be forwarded in real time. Device-bound signatures, booking v
 **Scope and limitations:** Reminders work offline subject to permissions and device settings. Email and SMS are excluded; cancellations and waitlist updates may require internet access.
 
 **Benefits:** Reduces missed events and unused places, improves punctuality and simplifies booking management.
+
 ### Architecture
-
-The s-CPD app uses **MVVM (Model-View-ViewModel) with Clean Architecture**, separating the application into Presentation, Domain and Data layers to improve maintainability, testability and separation of concerns.
-
-Figure 1 shows the overall architecture. The Presentation layer manages UI interactions and state, the Domain layer contains use cases and repository interfaces, and the Data layer implements repositories and manages local and remote data sources.
-
-![General Architecture](C:\Users\Shrey\Downloads\mobile-device-programming-main (1)\docs\scpd_architecture_diagram.png)
-
-The check-in feature illustrates how these layers interact.
-
-![General Architecture](scpd_architecture_diagram.png)
-
-#### How a Check-in Moves Through the Layers
-
-1. The student scans a club QR code or enters the 6-character code. `CheckInScreen` calls `CheckInViewModel`.
-2. `CheckInViewModel` invokes `CheckInUseCase` through a suspend function, keeping the UI responsive.
-3. `CheckInUseCase` validates the event, code validity window and phone-key signature, then saves the record through the `AttendanceRepository` interface.
-4. `AttendanceRepositoryImpl` saves the record locally using Room, enabling offline check-in, and uploads it to Firebase when connectivity returns.
-5. `CheckInViewModel` exposes `CheckInUiState` through `StateFlow`, such as "Saved on this phone, waiting to sync". `CheckInScreen` updates accordingly.
-
-### Design Decisions and Trade-offs
-
-#### Backend Selection
-Firebase provides authentication, database services, synchronisation and security with less development effort than a custom backend.
-
-#### Architectural Pattern
-MVVM separates UI and business logic while keeping complexity manageable. MVP requires more manual lifecycle handling, whereas MVI introduces unnecessary complexity for this project.
-
-#### Local Data Storage
-Room supports relational queries and transactions for bookings, attendance and sync queues. DataStore is better suited to simple settings.
-
-#### Points Processing and Ledger
-Points use an append-only ledger of credits and reversals. Corrections create new entries, preserving traceability for appeals and audits.### Architecture
 
 The s-CPD app uses **MVVM (Model-View-ViewModel) with Clean Architecture**, separating the application into Presentation, Domain and Data layers to improve maintainability, testability and separation of concerns.
 
@@ -372,4 +341,5 @@ Room stores event details, bookings, the club's signed QR session data and pendi
 
 If the app closes or the phone loses power, atomic database transactions ensure a record is either saved completely or not saved. Unsynchronised records remain stored across app restarts.
 
+###Wireframes
 
