@@ -323,11 +323,11 @@ The s-CPD app uses **MVVM (Model-View-ViewModel) with Clean Architecture**, sepa
 
 Figure 1 shows the overall architecture. The Presentation layer manages UI interactions and state, the Domain layer contains use cases and repository interfaces, and the Data layer implements repositories and manages local and remote data sources.
 
-![General Architecture](scpd_general_architecture.png)
+![General Architecture](docs/scpd_general_architecture.png)
 
 The check-in feature illustrates how these layers interact.
 
-![Check-in Architecture](scpd_architecture_diagram.png)
+![General Architecture](docs/scpd_architecture_diagram.png)
 
 #### How a Check-in Moves Through the Layers
 
@@ -351,34 +351,25 @@ Room supports relational queries and transactions for bookings, attendance and s
 #### Points Processing and Ledger
 Points use an append-only ledger of credits and reversals. Corrections create new entries, preserving traceability for appeals and audits.### Architecture
 
-The s-CPD app uses **MVVM (Model-View-ViewModel) with Clean Architecture**, separating the application into Presentation, Domain and Data layers to improve maintainability, testability and separation of concerns.
+## Data model
+![Data Model](docs/data%20model.png)
 
-Figure 1 shows the overall architecture. The Presentation layer manages UI interactions and state, the Domain layer contains use cases and repository interfaces, and the Data layer implements repositories and manages local and remote data sources.
+## Offline strategy
 
-![General Architecture](scpd_general_architecture.png)
+![Offline Sequence Diagram](docs/offline%20sequence.png)
 
-The check-in feature illustrates how these layers interact.
+Room stores event details, bookings, the club's signed QR session data and pending attendance records locally. Students and clubs must connect online beforehand to download the required data and register their devices.
 
-![Check-in Architecture](scpd_architecture_diagram.png)
+1. **Record:** When a student scans a QR code offline, the app checks the code's validity against the locally stored session data and confirms that the student has a booking. The check-in is signed using the device's Android Keystore key and saved atomically in Room as Pending sync.
 
-#### How a Check-in Moves Through the Layers
+2. **Display status:** The app distinguishes Pending sync, Syncing, Verified, Needs review, Rejected and Couldn't sync, so students know whether attendance has been confirmed.
 
-1. The student scans a club QR code or enters the 6-character code. `CheckInScreen` calls `CheckInViewModel`.
-2. `CheckInViewModel` invokes `CheckInUseCase` through a suspend function, keeping the UI responsive.
-3. `CheckInUseCase` validates the event, code validity window and phone-key signature, then saves the record through the `AttendanceRepository` interface.
-4. `AttendanceRepositoryImpl` saves the record locally using Room, enabling offline check-in, and uploads it to Firebase when connectivity returns.
-5. `CheckInViewModel` exposes `CheckInUiState` through `StateFlow`, such as "Saved on this phone, waiting to sync". `CheckInScreen` updates accordingly.
+3. **Synchronise:** When connectivity returns, the app uploads pending records automatically within 60 seconds. Retries use exponential backoff, and unique record IDs prevent duplicate processing.
 
-### Design Decisions and Trade-offs
+4. **Verify:** Firebase checks the device signature, event and booking details, code validity, event window, club session log, and duplicate records. Unverifiable records are flagged for review rather than automatically credited.
 
-#### Backend Selection
-Firebase provides authentication, database services, synchronisation and security with less development effort than a custom backend.
+5. **Resolve:** Records must sync within 72 hours of the event ending. Valid records become Verified; invalid or late records are rejected with a reason and an appeal option. Points are credited only after verification and event completion.
 
-#### Architectural Pattern
-MVVM separates UI and business logic while keeping complexity manageable. MVP requires more manual lifecycle handling, whereas MVI introduces unnecessary complexity for this project.
+If the app closes or the phone loses power, atomic database transactions ensure a record is either saved completely or not saved. Unsynchronised records remain stored across app restarts.
 
-#### Local Data Storage
-Room supports relational queries and transactions for bookings, attendance and sync queues. DataStore is better suited to simple settings.
 
-#### Points Processing and Ledger
-Points use an append-only ledger of credits and reversals. Corrections create new entries, preserving traceability for appeals and audits.
