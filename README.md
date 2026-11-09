@@ -1,4 +1,15 @@
-# Part 1 Report
+# s-CPD – COMP3040 Group H
+
+## How to run
+1. Open this folder in Android Studio.
+2. Wait for Gradle sync to finish.
+3. Run on a **Pixel 2 emulator, Android 12 (API 31)**.
+
+**Test accounts** (Release 1)
+- Student: student1@test.com / Test1234!
+- Club: club1@test.com / Test1234!# Part 1 Report
+
+
 ## Table of Contents
 1. [Requirements Analysis (R1–R3)](https://github.com/Shreya-1910/mobile-device-programming#requirements-analysis-r1r3)
 2. [R4: Online and Offline](https://github.com/Shreya-1910/mobile-device-programming#r4-online-and-offline)
