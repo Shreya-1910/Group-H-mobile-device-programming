@@ -1,6 +1,5 @@
 package com.mdpgroup08.scpd.ui.navigation
 
-import android.net.http.SslCertificate.saveState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +39,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.mdpgroup08.scpd.ui.club.CreateEventScreen
+import com.mdpgroup08.scpd.ui.club.MyEventsScreen
 
 /** One bottom-bar tab. */
 data class Tab(val route: String, val label: String, val icon: ImageVector)
@@ -93,8 +94,26 @@ fun ClubHome(onLogOut: () -> Unit) {
         bottomBar = { BottomBar(tabNav, clubTabs) }
     ) { padding ->
         NavHost(tabNav, startDestination = clubTabs.first().route, modifier = Modifier.padding(padding)) {
-            composable("club_my_events") { ComingSoonScreen("My events") }
-            composable("club_create_event") { ComingSoonScreen("Create event") }
+            composable("club_my_events") {
+                MyEventsScreen(
+                    onCreateEvent = { tabNav.navigate("club_create_event") { launchSingleTop = true } },
+                    onEditDraft = { id -> tabNav.navigate("club_edit_event/$id") }
+                )
+            }
+            composable("club_create_event") {
+                CreateEventScreen(onSaved = {
+                    tabNav.navigate("club_my_events") {
+                        popUpTo(tabNav.graph.findStartDestination().id)
+                        launchSingleTop = true
+                    }
+                })
+            }
+            composable("club_edit_event/{eventId}") { entry ->
+                CreateEventScreen(
+                    draftId = entry.arguments?.getString("eventId").orEmpty(),
+                    onSaved = { tabNav.popBackStack() }
+                )
+            }
             composable("club_check_in") { ComingSoonScreen("Check-in", release = 2) }
             composable("club_attendance") { ComingSoonScreen("Attendance", release = 2) }
         }

@@ -35,6 +35,9 @@ interface AuthRepository {
     /** Role of the user already signed in, or null if nobody is. */
     suspend fun currentUserRole(): UserRole?
 
+    /** clubId of the signed-in club account, or null (users/{uid}.clubId). */
+    suspend fun currentClubId(): String? = null
+
     fun signOut()
 }
 
@@ -87,6 +90,11 @@ class FirebaseAuthRepository(
         } catch (e: Exception) {
             null
         }
+    }
+
+    override suspend fun currentClubId(): String? {
+        val uid = auth.currentUser?.uid ?: return null
+        return firestore.collection("users").document(uid).get().await().getString("clubId")
     }
 
     override fun signOut() = auth.signOut()
