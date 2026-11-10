@@ -17,6 +17,14 @@ object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer { LoginViewModel(scpdApplication().container.authRepository) }
         initializer { SessionViewModel(scpdApplication().container.authRepository) }
+        initializer {
+            val c = scpdApplication().container
+            CreateEventViewModel(c.eventRepository, c.authRepository)
+        }
+        initializer {
+            val c = scpdApplication().container
+            MyEventsViewModel(c.eventRepository, c.authRepository)
+        }
     }
 }
 
