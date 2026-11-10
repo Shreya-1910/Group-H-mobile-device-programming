@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "281489257696",
+    "project_id": "scpd-group08",
+    "storage_bucket": "scpd-group08.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281489257696:android:44f3a3a73e3f1082720c85",
+        "android_client_info": {
+          "package_name": "com.mdpgroup08.scpd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLdA838SRqiSmkF-09TEZw5R7USaCaNqQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
