@@ -1,0 +1,138 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    // ==================================
+    // HELPER FUNCTIONS
+    // ==================================
+
+    // Check whether user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Check whether user document exists
+    function userExists() {
+      return isSignedIn()
+        && exists(
+          /databases/$(database)/documents/users/$(request.auth.uid)
+        );
+    }
+
+    // Get current user's document
+    function userData() {
+      return get(
+        /databases/$(database)/documents/users/$(request.auth.uid)
+      ).data;
+    }
+
+    // Check whether current user is a CLUB
+    function isClub() {
+      return userExists()
+        && userData().get('role', '') == 'CLUB'
+        && userData().get('clubId', '') != '';
+    }
+
+    // Check whether current user is a STUDENT
+    function isStudent() {
+      return userExists()
+        && userData().get('role', '') == 'STUDENT';
+    }
+
+    // Check whether current club owns the event
+    function isClubOwner(clubId) {
+      return isClub()
+        && clubId != null
+        && userData().get('clubId', '') == clubId;
+    }
+
+    // Check whether event is finalised
+    function isFinalised(status) {
+      return status == 'APPROVED'
+        || status == 'REJECTED';
+    }
+
+    // Check required event fields
+    function hasEventFields(data) {
+      return data.keys().hasAll([
+        'clubId',
+        'status'
+      ])
+      && data.get('clubId', null) != null
+      && data.get('status', null) != null;
+    }
+
+    // ==================================
+    // 1. USERS
+    // ==================================
+
+    match /users/{userId} {
+
+      // Users can read only their own document
+      allow read: if isSignedIn()
+        && request.auth.uid == userId;
+
+      // No user document writes
+      allow write: if false;
+    }
+
+    // ==================================
+    // 2. EVENTS
+    // ==================================
+
+    match /events/{eventId} {
+
+      // Any signed-in user can read APPROVED events.
+      // Clubs can also read their own events.
+      allow read: if isSignedIn()
+        && hasEventFields(resource.data)
+        && (
+          resource.data.status == 'APPROVED'
+          || isClubOwner(resource.data.clubId)
+        );
+
+      // Clubs can create their own events.
+      // New events must have PENDING status.
+      allow create: if hasEventFields(request.resource.data)
+        && isClubOwner(request.resource.data.clubId)
+        && request.resource.data.status == 'PENDING';
+
+      // Clubs can update their own non-finalised events.
+      // They cannot change the clubId.
+      // They cannot set status to APPROVED or REJECTED.
+      allow update: if hasEventFields(resource.data)
+        && hasEventFields(request.resource.data)
+        && isClubOwner(resource.data.clubId)
+        && resource.data.clubId == request.resource.data.clubId
+        && !isFinalised(resource.data.status)
+        && !isFinalised(request.resource.data.status);
+
+      // Clubs can delete their own non-finalised events.
+      allow delete: if hasEventFields(resource.data)
+        && isClubOwner(resource.data.clubId)
+        && !isFinalised(resource.data.status);
+    }
+
+    // ==================================
+    // 3. BOOKINGS
+    // ==================================
+
+    match /bookings/{bookingId} {
+
+      // Students can create bookings only for themselves.
+      allow create: if isStudent()
+        && request.resource.data.keys().hasAll([
+          'studentId'
+        ])
+        && request.resource.data.studentId
+          == request.auth.uid;
+
+      // No other booking operations are permitted
+      // until explicitly defined by the requirements.
+    }
+
+  }
+}
