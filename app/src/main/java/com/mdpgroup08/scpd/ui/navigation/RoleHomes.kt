@@ -175,3 +175,9 @@ private fun StudentProfileScreen(onLogOut: () -> Unit) {
         Button(onClick = onLogOut) { Text("Log out") }
     }
 }
+
+/** Admin home (R6). Member 1: tabs and approval queue come next. */
+@Composable
+fun AdminHome(onLogOut: () -> Unit) {
+    ComingSoonScreen("Admin")
+}
