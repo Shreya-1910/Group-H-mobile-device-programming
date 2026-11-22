@@ -34,6 +34,8 @@ import com.mdpgroup08.scpd.viewmodel.MyEventsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.ui.platform.testTag
+import com.mdpgroup08.scpd.viewmodel.ClubEventItem
 
 /** Club "My events" (R1-S3, R1-S6). */
 @Composable
@@ -61,8 +63,8 @@ fun MyEventsScreen(
                     Spacer(Modifier.height(8.dp))
                     Button(onClick = onCreateEvent) { Text("Create event") }
                 } else LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(s.events, key = { it.id }) { event ->
-                        ClubEventCard(event, onEdit = { onEditDraft(event.id) })
+                    items(s.events, key = { it.event.id }) { item ->
+                        ClubEventCard(item, onEdit = { onEditDraft(item.event.id) })
                     }
                 }
         }
@@ -70,12 +72,15 @@ fun MyEventsScreen(
 }
 
 @Composable
-private fun ClubEventCard(event: Event, onEdit: () -> Unit) {
-    val dateText = if (event.startTime > 0)
-        SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault()).format(Date(event.startTime))
-    else "Date not set"
+private fun ClubEventCard(item: ClubEventItem, onEdit: () -> Unit) {
+    val event = item.event
+    val dateText = if (event.startTime > 0) {
+        val fmt = SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault())
+        val endFmt = SimpleDateFormat("h:mm a", Locale.getDefault())
+        "${fmt.format(Date(event.startTime))} – ${endFmt.format(Date(event.endTime))}"
+    } else "Date not set"
 
-    Card(Modifier.fillMaxWidth()) {
+    Card(Modifier.fillMaxWidth().testTag("club_event_${event.id}")) {
         Column(Modifier.padding(16.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(event.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
@@ -83,18 +88,24 @@ private fun ClubEventCard(event: Event, onEdit: () -> Unit) {
             }
             Spacer(Modifier.height(4.dp))
             Text(dateText, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${event.location} • Capacity ${event.capacity} • ${event.requestedPoints} points",
-                style = MaterialTheme.typography.bodySmall)
+            Text(
+                "${event.location} • Capacity ${event.capacity} • ${event.requestedPoints} points requested",
+                style = MaterialTheme.typography.bodySmall
+            )
 
-            when (event.status) {
-                EventStatus.DRAFT -> TextButton(onClick = onEdit) { Text("Edit draft") }
-                EventStatus.PENDING, EventStatus.APPROVED -> Text(
-                    "Submitted events can't be changed.",
+            item.note?.let { note ->
+                Text(
+                    note,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (item.noteIsWarning) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
                 )
-                else -> {}
+            }
+
+            // R1-S6: only drafts have an Edit button
+            if (event.status == EventStatus.DRAFT) {
+                TextButton(onClick = onEdit) { Text("Edit draft") }
             }
         }
     }
@@ -109,7 +120,7 @@ private fun StatusChip(status: EventStatus) {
         EventStatus.APPROVED -> "✓ Approved" to Color(0xFF2E7D32)
         EventStatus.REJECTED -> "✕ Rejected" to Color(0xFFC62828)
         EventStatus.CANCELLED -> "⊘ Cancelled" to Color(0xFF424242)
-        EventStatus.EXPIRED -> TODO()
+        EventStatus.EXPIRED -> "⌛ Expired" to Color(0xFF5D4037)
     }
     Surface(color = color, shape = RoundedCornerShape(50)) {
         Text(label, color = Color.White, style = MaterialTheme.typography.labelMedium,
