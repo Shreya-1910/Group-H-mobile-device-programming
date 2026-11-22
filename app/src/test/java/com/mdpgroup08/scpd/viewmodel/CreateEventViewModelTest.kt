@@ -37,8 +37,8 @@ class CreateEventViewModelTest {
     private val utc = ZoneOffset.UTC
 
     private val valid = EventForm(
-        title = "Intro to Arduino", location = "Lab B2",
-        date = "05/11/2026", time = "14:00", capacity = "60", points = "3"
+        title = "Intro to Arduino", category = "Technology", location = "Lab B2",
+        date = "05/11/2026", time = "14:00", endTime = "16:00", capacity = "60", points = "3"
     )
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -126,5 +126,48 @@ class CreateEventViewModelTest {
 
         assertNotNull(vm.uiState.value.saveError)
         assertEquals(SaveAction.DRAFT, vm.uiState.value.lastAction)
+    }
+
+    @Test
+    fun `missing end time is rejected`() {
+        val e = EventValidation.validate(valid.copy(endTime = ""), now, utc)
+        assertEquals("End time is required", e.endTime)
+    }
+
+    @Test
+    fun `end time before start is rejected`() {
+        val e = EventValidation.validate(valid.copy(endTime = "13:00"), now, utc)
+        assertEquals("End time must be after the start time", e.endTime)
+    }
+
+    @Test
+    fun `end time equal to start is rejected`() {
+        val e = EventValidation.validate(valid.copy(endTime = "14:00"), now, utc)
+        assertEquals("End time must be after the start time", e.endTime)
+    }
+
+    @Test
+    fun `badly formatted end time is rejected`() {
+        val e = EventValidation.validate(valid.copy(endTime = "4pm"), now, utc)
+        assertEquals("Use the format HH:mm", e.endTime)
+    }
+
+    @Test
+    fun `missing category is rejected`() {
+        val e = EventValidation.validate(valid.copy(category = ""), now, utc)
+        assertEquals("Choose a category", e.category)
+    }
+
+    @Test
+    fun `saved event has end time after start and the category`() = runTest {
+        val repo = FakeEventRepository(emptyList())
+        val vm = CreateEventViewModel(repo, FakeClubAuth(), clock = { now })
+        vm.onFormChange(valid)
+        vm.saveDraft()
+
+        val saved = repo.getClubEvents("club_robotics").first().single()
+        assertTrue(saved.endTime > saved.startTime)
+        assertEquals("Technology", saved.category)
+        assertEquals(now, saved.createdAt)
     }
 }
