@@ -16,6 +16,7 @@ object Routes {
     const val LOGIN = "login"
     const val STUDENT_HOME = "student_home"
     const val CLUB_HOME = "club_home"
+    const val ADMIN_HOME = "admin_home"
 }
 
 @Composable
@@ -37,6 +38,7 @@ fun AppNavHost(
                     val home = when (role) {
                         UserRole.STUDENT -> Routes.STUDENT_HOME
                         UserRole.CLUB -> Routes.CLUB_HOME
+                        UserRole.ADMIN -> Routes.ADMIN_HOME
                     }
                     navController.navigate(home) {
                         popUpTo(Routes.LOGIN) { inclusive = true } // Back from the tabs exits the app
@@ -46,5 +48,6 @@ fun AppNavHost(
         }
         composable(Routes.STUDENT_HOME) { StudentHome(onLogOut = logOut) }
         composable(Routes.CLUB_HOME) { ClubHome(onLogOut = logOut) }
+        composable(Routes.ADMIN_HOME) { AdminHome(onLogOut = logOut) }
     }
 }

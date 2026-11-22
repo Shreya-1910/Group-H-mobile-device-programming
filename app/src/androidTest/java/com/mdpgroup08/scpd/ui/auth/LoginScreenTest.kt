@@ -1,5 +1,19 @@
 package com.mdpgroup08.scpd.ui.auth
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextInput
+import com.mdpgroup08.scpd.viewmodel.LoginUiState
+import org.junit.Rule
+import org.junit.Test
+
 /** UI tests for the login layout. Run on the Pixel 2 API 31 emulator. */
 class LoginScreenTest {
 

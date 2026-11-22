@@ -1,5 +1,23 @@
 package com.mdpgroup08.scpd.viewmodel
 
+import com.mdpgroup08.scpd.data.model.UserRole
+import com.mdpgroup08.scpd.data.repository.AuthRepository
+import com.mdpgroup08.scpd.data.repository.SignInError
+import com.mdpgroup08.scpd.data.repository.SignInException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+
 /** A fake AuthRepository: no Firebase, so tests are fast and repeatable. */
 private class FakeAuthRepository(
     var roleToReturn: UserRole? = null,

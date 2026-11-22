@@ -103,6 +103,6 @@ class FirebaseAuthRepository(
     private suspend fun loadRole(): UserRole? {
         val uid = auth.currentUser?.uid ?: return null
         val snapshot = firestore.collection("users").document(uid).get().await()
-        return UserRole.fromString(snapshot.getString("role"))
+        return UserRole.fromString(snapshot.getString("role"),)
     }
 }

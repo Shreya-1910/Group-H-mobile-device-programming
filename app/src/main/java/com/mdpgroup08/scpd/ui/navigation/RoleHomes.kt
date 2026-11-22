@@ -61,6 +61,13 @@ private val clubTabs = listOf(
     Tab("club_attendance", "Attendance", Icons.Filled.Face)
 )
 
+// Admin tabs (R6)
+private val adminTabs = listOf(
+    Tab("admin_queue", "Queue", Icons.Filled.CheckCircle),
+    Tab("admin_accounts", "Accounts", Icons.Filled.Person),
+    Tab("admin_audit", "Audit log", Icons.AutoMirrored.Filled.List)
+)
+
 /** Student home. Member 3: replace ComingSoonScreen for your tabs with your screens. */
 @Composable
 fun StudentHome(onLogOut: () -> Unit) {
@@ -173,5 +180,31 @@ private fun StudentProfileScreen(onLogOut: () -> Unit) {
         Text("Profile", style = MaterialTheme.typography.headlineSmall)
         Spacer(Modifier.height(24.dp))
         Button(onClick = onLogOut) { Text("Log out") }
+    }
+}
+
+/** Admin home (R6), with Log out in the top bar. Member 1: queue, accounts and audit log. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdminHome(onLogOut: () -> Unit) {
+    val tabNav = rememberNavController()
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("s-CPD Admin") },
+                actions = {
+                    IconButton(onClick = onLogOut) {
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Log out")
+                    }
+                }
+            )
+        },
+        bottomBar = { BottomBar(tabNav, adminTabs) }
+    ) { padding ->
+        NavHost(tabNav, startDestination = adminTabs.first().route, modifier = Modifier.padding(padding)) {
+            composable("admin_queue") { ComingSoonScreen("Approval queue", release = 2) }
+            composable("admin_accounts") { ComingSoonScreen("Accounts & appeals", release = 3) }
+            composable("admin_audit") { ComingSoonScreen("Audit log", release = 3) }
+        }
     }
 }
