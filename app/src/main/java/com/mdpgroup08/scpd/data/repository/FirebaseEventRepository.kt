@@ -27,7 +27,7 @@ class FirebaseEventRepository(
     override fun getApprovedUpcomingEvents(): Flow<List<Event>> =
         events.whereEqualTo("status", EventStatus.APPROVED.name)
             .snapshotFlow()
-            // 在客戶端過濾日期並排序，避免需要建立 Firestore 複合索引
+            // Client-side date filtering and sorting to avoid requiring Firestore composite index
             .map { list ->
                 val now = System.currentTimeMillis()
                 list.filter { it.startTime >= now }.sortedBy { it.startTime }

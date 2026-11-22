@@ -7,15 +7,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mdpgroup08.scpd.ScpdApplication
 
 /**
- * One factory that creates every ViewModel with its repositories.
- * In a screen: val vm: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
- *
- * Everyone: add one initializer line here for each new ViewModel, e.g.
- *   initializer { MarketplaceViewModel(scpdApplication().container.eventRepository) }
+ * Creates every ViewModel with its repositories.
  */
 object AppViewModelProvider {
     val Factory: ViewModelProvider.Factory = viewModelFactory {
         initializer { LoginViewModel(scpdApplication().container.authRepository) }
+        initializer { RegisterViewModel(scpdApplication().container.authRepository) }
         initializer { SessionViewModel(scpdApplication().container.authRepository) }
         initializer {
             val c = scpdApplication().container
@@ -24,6 +21,10 @@ object AppViewModelProvider {
         initializer {
             val c = scpdApplication().container
             MyEventsViewModel(c.eventRepository, c.authRepository)
+        }
+        initializer {
+            val c = scpdApplication().container
+            AdminViewModel(c.adminRepository, c.authRepository)
         }
     }
 }

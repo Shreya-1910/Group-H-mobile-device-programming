@@ -8,9 +8,9 @@ interface EventRepository {
     fun getEvent(id: String): Flow<Event?>
     fun getClubEvents(clubId: String): Flow<List<Event>>
 
-    /** 儲存為 DRAFT，回傳文件 id */
+    /** Saves as DRAFT and returns document ID */
     suspend fun saveDraft(event: Event): String
 
-    /** 狀態設為 PENDING，submittedAt = 現在，回傳文件 id */
+    /** Sets status to PENDING, submittedAt = now, and returns document ID */
     suspend fun submit(event: Event): String
 }

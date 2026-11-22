@@ -29,14 +29,20 @@ service cloud.firestore {
       ).data;
     }
 
-    // Check whether current user is a CLUB
+    // Check whether current user is an ADMIN (R6-S2, R6-S6)
+    function isAdmin() {
+      return userExists()
+        && userData().get('role', '') == 'ADMIN';
+    }
+
+    // Check whether current user is a CLUB (R6-S2)
     function isClub() {
       return userExists()
         && userData().get('role', '') == 'CLUB'
         && userData().get('clubId', '') != '';
     }
 
-    // Check whether current user is a STUDENT
+    // Check whether current user is a STUDENT (R6-S2)
     function isStudent() {
       return userExists()
         && userData().get('role', '') == 'STUDENT';
@@ -66,17 +72,25 @@ service cloud.firestore {
     }
 
     // ==================================
-    // 1. USERS
+    // 1. USERS (R6-S1, R6-S2, R6-S4, R6-S5)
     // ==================================
 
     match /users/{userId} {
 
-      // Users can read only their own document
+      // Users can read their own document; Admins can read all users
       allow read: if isSignedIn()
-        && request.auth.uid == userId;
+        && (request.auth.uid == userId || isAdmin());
 
-      // No user document writes
-      allow write: if false;
+      // Student registration (R6-S2 EX1: role forcibly STUDENT, client role param ignored)
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.role == 'STUDENT';
+
+      // Admins can update user document (e.g. deactivate account, update end year)
+      allow update: if isAdmin();
+
+      // Deletion denied
+      allow delete: if false;
     }
 
     // ==================================
@@ -86,52 +100,69 @@ service cloud.firestore {
     match /events/{eventId} {
 
       // Any signed-in user can read APPROVED events.
-      // Clubs can also read their own events.
+      // Clubs can also read their own events (DRAFT, PENDING, APPROVED, REJECTED).
+      // Admins can read all events.
       allow read: if isSignedIn()
-        && hasEventFields(resource.data)
         && (
-          resource.data.status == 'APPROVED'
-          || isClubOwner(resource.data.clubId)
+          isAdmin() ||
+          (hasEventFields(resource.data) && (resource.data.status == 'APPROVED' || isClubOwner(resource.data.clubId)))
         );
 
-      // Clubs can create their own events.
-      // New events must have PENDING status.
+      // Clubs can create their own events in DRAFT or PENDING status (R1-S1, R1-S2).
       allow create: if hasEventFields(request.resource.data)
         && isClubOwner(request.resource.data.clubId)
-        && request.resource.data.status == 'PENDING';
+        && (request.resource.data.status == 'DRAFT' || request.resource.data.status == 'PENDING');
 
-      // Clubs can update their own non-finalised events.
-      // They cannot change the clubId.
-      // They cannot set status to APPROVED or REJECTED.
-      allow update: if hasEventFields(resource.data)
+      // Clubs can update their own non-finalised events. Admins can update for approvals.
+      allow update: if isAdmin() || (
+        hasEventFields(resource.data)
         && hasEventFields(request.resource.data)
         && isClubOwner(resource.data.clubId)
         && resource.data.clubId == request.resource.data.clubId
         && !isFinalised(resource.data.status)
-        && !isFinalised(request.resource.data.status);
+        && request.resource.data.status != 'APPROVED'
+        && request.resource.data.status != 'REJECTED'
+      );
 
       // Clubs can delete their own non-finalised events.
-      allow delete: if hasEventFields(resource.data)
-        && isClubOwner(resource.data.clubId)
+      allow delete: if isClubOwner(resource.data.clubId)
         && !isFinalised(resource.data.status);
     }
 
     // ==================================
-    // 3. BOOKINGS
+    // 3. BOOKINGS (R2, R6-S5 EX2)
     // ==================================
 
     match /bookings/{bookingId} {
 
-      // Students can create bookings only for themselves.
-      allow create: if isStudent()
-        && request.resource.data.keys().hasAll([
-          'studentId'
-        ])
-        && request.resource.data.studentId
-          == request.auth.uid;
+      allow read: if isSignedIn()
+        && (resource.data.studentId == request.auth.uid || isAdmin());
 
-      // No other booking operations are permitted
-      // until explicitly defined by the requirements.
+      // Students can create bookings for themselves.
+      allow create: if isStudent()
+        && request.resource.data.keys().hasAll(['studentId'])
+        && request.resource.data.studentId == request.auth.uid;
+
+      // Admins can update bookings (e.g. cancellation on account deactivation R6-S5 EX2).
+      allow update: if isAdmin();
+    }
+
+    // ==================================
+    // 4. AUDIT LOGS (R6-S6)
+    // ==================================
+
+    match /audit_logs/{auditId} {
+
+      // Only Admins can read audit logs (R6-S6 AC1)
+      allow read: if isAdmin();
+
+      // Writing audit logs requires 2FA verified flag, actorId, action, targetId and reason (R6-S6 AC1)
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll(['actorId', 'action', 'targetId', 'reason', 'verified2Fa', 'timestamp'])
+        && request.resource.data.reason.size() > 0;
+
+      // Immutable audit log requirement: update and delete strictly prohibited (R6-S6 AC1)
+      allow update, delete: if false;
     }
 
   }

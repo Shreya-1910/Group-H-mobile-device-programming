@@ -42,7 +42,12 @@ class MyEventsViewModel(
                 return@launch
             }
             eventRepository.getClubEvents(clubId)
-                .catch { _uiState.value = MyEventsUiState.Error("Couldn't load your events. Check your connection.") }
+                .catch { e ->
+                    // Keep previously loaded list if available, or set Error
+                    if (_uiState.value !is MyEventsUiState.Success) {
+                        _uiState.value = MyEventsUiState.Error("Couldn't load your events. Check your connection.")
+                    }
+                }
                 .collect { list ->
                     _uiState.value = MyEventsUiState.Success(list.sortedByDescending { it.startTime })
                 }

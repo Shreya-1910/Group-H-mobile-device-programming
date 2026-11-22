@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,6 +53,7 @@ object LoginTags {
 @Composable
 fun LoginScreen(
     onSignedIn: (UserRole) -> Unit,
+    onNavigateToRegister: () -> Unit = {},
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,7 +71,8 @@ fun LoginScreen(
             state = state,
             onEmailChange = viewModel::onEmailChange,
             onPasswordChange = viewModel::onPasswordChange,
-            onLogin = viewModel::signIn
+            onLogin = viewModel::signIn,
+            onNavigateToRegister = onNavigateToRegister
         )
     }
 }
@@ -81,6 +84,7 @@ fun LoginContent(
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onLogin: () -> Unit,
+    onNavigateToRegister: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -148,6 +152,11 @@ fun LoginContent(
                 Text("Log in")
             }
         }
+
+        Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onNavigateToRegister) {
+            Text("Don't have an account? Register")
+        }
     }
 }
 
@@ -156,6 +165,6 @@ fun LoginContent(
 private fun LoginPreview() {
     LoginContent(
         state = LoginUiState(isCheckingSession = false, errorMessage = "The email or password is incorrect"),
-        onEmailChange = {}, onPasswordChange = {}, onLogin = {}
+        onEmailChange = {}, onPasswordChange = {}, onLogin = {}, onNavigateToRegister = {}
     )
 }

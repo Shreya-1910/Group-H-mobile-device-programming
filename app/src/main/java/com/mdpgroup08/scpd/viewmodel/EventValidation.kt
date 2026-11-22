@@ -1,5 +1,6 @@
 package com.mdpgroup08.scpd.viewmodel
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -24,13 +25,15 @@ data class EventFormErrors(
     val title: String? = null,
     val category: String? = null,
     val location: String? = null,
+    val date: String? = null,
     val dateTime: String? = null,
+    val time: String? = null,
     val endTime: String? = null,
     val capacity: String? = null,
     val points: String? = null
 ) {
     val hasErrors: Boolean
-        get() = listOf(title, category, location, dateTime, endTime, capacity, points).any { it != null }
+        get() = listOf(title, category, location, date, dateTime, time, endTime, capacity, points).any { it != null }
 }
 
 /**
@@ -44,6 +47,7 @@ object EventValidation {
     /** Categories used by Marketplace filters (R2-S2) and points by category (R5-S10). */
     val CATEGORIES = listOf("Technology", "Career", "Community", "Sports", "Arts & Culture", "Leadership", "Other")
 
+    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -55,6 +59,12 @@ object EventValidation {
         null
     }
 
+    private fun isValidDate(date: String): Boolean = try {
+        LocalDate.parse(date.trim(), dateFormatter); true
+    } catch (e: DateTimeParseException) {
+        false
+    }
+
     private fun isValidTime(time: String): Boolean = try {
         LocalTime.parse(time.trim(), timeFormatter); true
     } catch (e: DateTimeParseException) {
@@ -62,8 +72,34 @@ object EventValidation {
     }
 
     fun validate(form: EventForm, now: Long, zone: ZoneId = ZoneId.systemDefault()): EventFormErrors {
-        val start = parseDateTime(form.date, form.time, zone)
-        val end = parseDateTime(form.date, form.endTime, zone)
+        val dateBlank = form.date.isBlank()
+        val dateValid = isValidDate(form.date)
+        val timeBlank = form.time.isBlank()
+        val timeValid = isValidTime(form.time)
+
+        val dateError = when {
+            dateBlank -> "Date is required"
+            !dateValid -> "Use the format dd/MM/yyyy"
+            else -> null
+        }
+
+        val start = if (dateValid && timeValid) parseDateTime(form.date, form.time, zone) else null
+        val end = if (dateValid && isValidTime(form.endTime)) parseDateTime(form.date, form.endTime, zone) else null
+
+        val timeError = when {
+            timeBlank -> "Start time is required"
+            !timeValid -> "Use the format HH:mm"
+            start != null && start <= now -> "The start time must be in the future"
+            else -> null
+        }
+
+        val dateTimeError = when {
+            dateBlank && timeBlank -> "Date and start time are required"
+            !dateValid -> "Use the format dd/MM/yyyy and HH:mm"
+            start != null && start <= now -> "The start time must be in the future"
+            else -> timeError
+        }
+
         val capacity = form.capacity.trim().toIntOrNull()
         val points = form.points.trim().toIntOrNull()
 
@@ -71,16 +107,13 @@ object EventValidation {
             title = if (form.title.isBlank()) "Title is required" else null,
             category = if (form.category !in CATEGORIES) "Choose a category" else null,
             location = if (form.location.isBlank()) "Location is required" else null,
-            dateTime = when {
-                form.date.isBlank() || form.time.isBlank() -> "Date and start time are required"
-                start == null -> "Use the format dd/MM/yyyy and HH:mm"
-                start <= now -> "The start time must be in the future"
-                else -> null
-            },
+            date = dateError,
+            dateTime = dateTimeError,
+            time = timeError,
             endTime = when {
                 form.endTime.isBlank() -> "End time is required"
                 !isValidTime(form.endTime) -> "Use the format HH:mm"
-                start == null || end == null -> null  // the date error is already shown
+                start == null || end == null -> null  // date/start time error is already shown
                 end <= start -> "End time must be after the start time"
                 else -> null
             },

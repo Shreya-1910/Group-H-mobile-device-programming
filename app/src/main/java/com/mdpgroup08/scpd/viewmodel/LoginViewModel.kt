@@ -70,10 +70,12 @@ class LoginViewModel(
     companion object {
         /** Messages shown to the user (wording from R6-S1). */
         fun messageFor(error: SignInError): String = when (error) {
-            SignInError.WRONG_CREDENTIALS -> "The email or password is incorrect"
+            SignInError.WRONG_CREDENTIALS -> "The email or password is incorrect" // EX1 generic error
+            SignInError.BLOCKED_15_MINS -> "Too many wrong attempts. You are blocked for 15 minutes." // AC2 requirement
             SignInError.TOO_MANY_ATTEMPTS -> "Too many attempts. Please wait a few minutes and try again."
             SignInError.NO_CONNECTION -> "No internet connection. Check your connection and try again."
             SignInError.NO_ROLE -> "This account has no role yet. Please contact the s-CPD office."
+            SignInError.ACCOUNT_DEACTIVATED -> "This account has been deactivated."
             SignInError.UNKNOWN -> "Something went wrong. Please try again."
         }
     }

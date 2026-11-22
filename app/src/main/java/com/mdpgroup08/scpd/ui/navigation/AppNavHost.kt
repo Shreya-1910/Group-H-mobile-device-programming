@@ -8,12 +8,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.mdpgroup08.scpd.data.model.UserRole
 import com.mdpgroup08.scpd.ui.auth.LoginScreen
+import com.mdpgroup08.scpd.ui.auth.RegisterScreen
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.SessionViewModel
 
-/** Top-level screens: login, then one home per role. */
+/** Top-level screens: login, register, then one home per role (R6-S2). */
 object Routes {
     const val LOGIN = "login"
+    const val REGISTER = "register"
     const val STUDENT_HOME = "student_home"
     const val CLUB_HOME = "club_home"
     const val ADMIN_HOME = "admin_home"
@@ -41,7 +43,24 @@ fun AppNavHost(
                         UserRole.ADMIN -> Routes.ADMIN_HOME
                     }
                     navController.navigate(home) {
-                        popUpTo(Routes.LOGIN) { inclusive = true } // Back from the tabs exits the app
+                        popUpTo(Routes.LOGIN) { inclusive = true } // Back from tabs exits app
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate(Routes.REGISTER)
+                }
+            )
+        }
+        composable(Routes.REGISTER) {
+            RegisterScreen(
+                onRegistered = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.REGISTER) { inclusive = true }
                     }
                 }
             )

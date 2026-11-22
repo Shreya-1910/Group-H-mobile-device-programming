@@ -78,11 +78,11 @@ fun CreateEventScreen(
         }
         CategoryField(f.category, e.category) { viewModel.onFormChange(f.copy(category = it)) }
         Field("Location", f.location, e.location, "location") { viewModel.onFormChange(f.copy(location = it)) }
-        Field("Date (dd/MM/yyyy)", f.date, e.dateTime, "date") {
+        Field("Date (dd/MM/yyyy)", f.date, e.date, "date") {
             viewModel.onFormChange(f.copy(date = it))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Field("Start time (HH:mm)", f.time, null, "time", Modifier.weight(1f)) {
+            Field("Start time (HH:mm)", f.time, e.time, "time", Modifier.weight(1f)) {
                 viewModel.onFormChange(f.copy(time = it))
             }
             Field("End time (HH:mm)", f.endTime, e.endTime, "endTime", Modifier.weight(1f)) {

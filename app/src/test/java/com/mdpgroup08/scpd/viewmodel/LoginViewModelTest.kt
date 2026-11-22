@@ -33,6 +33,9 @@ private class FakeAuthRepository(
     }
 
     override suspend fun currentUserRole(): UserRole? = alreadySignedInAs
+    override suspend fun currentUser(): com.mdpgroup08.scpd.data.model.User? = null
+    override suspend fun registerStudent(email: String, password: String, name: String, pdpaAccepted: Boolean, studyDetails: com.mdpgroup08.scpd.data.model.StudyDetails) {}
+    override suspend fun verifyCheckInDevice(): Boolean = true
     override fun signOut() { alreadySignedInAs = null }
 }
 

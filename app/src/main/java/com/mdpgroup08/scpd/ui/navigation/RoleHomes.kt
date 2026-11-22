@@ -183,7 +183,7 @@ private fun StudentProfileScreen(onLogOut: () -> Unit) {
     }
 }
 
-/** Admin home (R6), with Log out in the top bar. Member 1: queue, accounts and audit log. */
+/** Admin home (R6), with Log out in the top bar. Includes Admin Tools and Audit Log. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHome(onLogOut: () -> Unit) {
@@ -203,8 +203,8 @@ fun AdminHome(onLogOut: () -> Unit) {
     ) { padding ->
         NavHost(tabNav, startDestination = adminTabs.first().route, modifier = Modifier.padding(padding)) {
             composable("admin_queue") { ComingSoonScreen("Approval queue", release = 2) }
-            composable("admin_accounts") { ComingSoonScreen("Accounts & appeals", release = 3) }
-            composable("admin_audit") { ComingSoonScreen("Audit log", release = 3) }
+            composable("admin_accounts") { com.mdpgroup08.scpd.ui.admin.AdminScreen() }
+            composable("admin_audit") { com.mdpgroup08.scpd.ui.admin.AdminScreen() }
         }
     }
 }

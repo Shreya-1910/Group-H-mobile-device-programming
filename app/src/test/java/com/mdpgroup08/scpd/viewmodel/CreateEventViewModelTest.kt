@@ -29,6 +29,9 @@ class CreateEventViewModelTest {
         override suspend fun signIn(email: String, password: String) = UserRole.CLUB
         override suspend fun currentUserRole() = UserRole.CLUB
         override suspend fun currentClubId() = clubId
+        override suspend fun currentUser(): com.mdpgroup08.scpd.data.model.User? = null
+        override suspend fun registerStudent(email: String, password: String, name: String, pdpaAccepted: Boolean, studyDetails: com.mdpgroup08.scpd.data.model.StudyDetails) {}
+        override suspend fun verifyCheckInDevice(): Boolean = true
         override fun signOut() {}
     }
 
