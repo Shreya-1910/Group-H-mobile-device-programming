@@ -25,6 +25,8 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     override suspend fun saveDraft(event: Event): String =
         upsert(event.copy(status = EventStatus.DRAFT, submittedAt = null))
 
+    override fun newId(): String = "fake_${System.nanoTime()}"
+
     override suspend fun submit(event: Event): String =
         upsert(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
 

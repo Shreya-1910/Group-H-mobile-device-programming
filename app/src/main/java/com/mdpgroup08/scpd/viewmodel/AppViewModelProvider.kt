@@ -16,7 +16,7 @@ object AppViewModelProvider {
         initializer { SessionViewModel(scpdApplication().container.authRepository) }
         initializer {
             val c = scpdApplication().container
-            CreateEventViewModel(c.eventRepository, c.authRepository)
+            CreateEventViewModel(c.eventRepository, c.authRepository, c.networkMonitor)
         }
         initializer {
             val c = scpdApplication().container

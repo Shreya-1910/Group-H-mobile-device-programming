@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
+import com.mdpgroup08.scpd.data.network.NetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AuthRepository
 import com.mdpgroup08.scpd.data.repository.EventRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -22,9 +24,13 @@ enum class SaveAction { DRAFT, SUBMIT }
 data class CreateEventUiState(
     val form: EventForm = EventForm(),
     val errors: EventFormErrors = EventFormErrors(),
-    /** ID of the draft being edited, or "" for a new event. */
+    /** Id of the draft being edited, or "" for a new event. */
     val editingId: String = "",
+    /** createdAt of the draft being edited, so editing doesn't reset it. */
     val editingCreatedAt: Long = 0L,
+    /** Id reserved for a new event on its first save attempt, so a retry overwrites instead of duplicating. */
+    val savingId: String = "",
+    val isOffline: Boolean = false,
     val isSaving: Boolean = false,
     val showSubmitConfirm: Boolean = false,
     val saveError: String? = null,
@@ -37,11 +43,20 @@ data class CreateEventUiState(
 class CreateEventViewModel(
     private val eventRepository: EventRepository,
     private val authRepository: AuthRepository,
-    private val clock: () -> Long = { System.currentTimeMillis() }
+    private val networkMonitor: NetworkMonitor,
+    private val clock: () -> Long = { System.currentTimeMillis() },
+    private val saveTimeoutMs: Long = SAVE_TIMEOUT_MS
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CreateEventUiState())
+    private val _uiState = MutableStateFlow(CreateEventUiState(isOffline = !networkMonitor.isOnline.value))
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
+
+    init {
+        // Keep the offline banner and buttons in step with the connection (R1-S2 AC2)
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { online -> _uiState.update { it.copy(isOffline = !online) } }
+        }
+    }
 
     fun onFormChange(form: EventForm) =
         _uiState.update { it.copy(form = form, saveError = null) }
@@ -103,20 +118,36 @@ class CreateEventViewModel(
 
     private fun save(action: SaveAction) {
         if (!validate()) return
+
+        // R1-S2 AC2: saving and submitting need a connection. The form is kept.
+        if (_uiState.value.isOffline) {
+            _uiState.update { it.copy(saveError = OFFLINE_MESSAGE, lastAction = action) }
+            return
+        }
+
         val state = _uiState.value
-        _uiState.update { it.copy(isSaving = true, saveError = null, lastAction = action) }
+        // Reserve the ID once, so a retry after a lost reply overwrites the same event
+        val id = state.editingId.ifBlank { state.savingId.ifBlank { eventRepository.newId() } }
+        _uiState.update { it.copy(isSaving = true, saveError = null, lastAction = action, savingId = id) }
 
         viewModelScope.launch {
             try {
                 val clubId = authRepository.currentClubId()
                     ?: throw IllegalStateException("No club linked to this account")
-                val event = buildEvent(state, clubId)
-                if (action == SaveAction.DRAFT) eventRepository.saveDraft(event)
-                else eventRepository.submit(event)
+                val event = buildEvent(state, clubId).copy(id = id)
+
+                val savedId = withTimeoutOrNull(saveTimeoutMs) {
+                    if (action == SaveAction.DRAFT) eventRepository.saveDraft(event)
+                    else eventRepository.submit(event)
+                }
+                if (savedId == null) {
+                    _uiState.update { it.copy(isSaving = false, saveError = TIMEOUT_MESSAGE) }
+                    return@launch
+                }
 
                 _uiState.value = CreateEventUiState(
-                    successMessage = if (action == SaveAction.DRAFT) "Draft saved"
-                    else "Submitted for approval"
+                    isOffline = !networkMonitor.isOnline.value,
+                    successMessage = if (action == SaveAction.DRAFT) "Draft saved" else "Submitted for approval"
                 )
             } catch (e: Exception) {
                 _uiState.update {
@@ -141,5 +172,11 @@ class CreateEventViewModel(
             capacity = f.capacity.trim().toInt(),
             createdAt = if (state.editingCreatedAt > 0) state.editingCreatedAt else clock()
         )
+    }
+
+    companion object {
+        const val SAVE_TIMEOUT_MS = 15_000L
+        const val OFFLINE_MESSAGE = "You're offline. Connect to the internet to save or submit. Your form is kept."
+        const val TIMEOUT_MESSAGE = "The server is taking too long to respond. Tap Retry; your event won't be duplicated."
     }
 }
