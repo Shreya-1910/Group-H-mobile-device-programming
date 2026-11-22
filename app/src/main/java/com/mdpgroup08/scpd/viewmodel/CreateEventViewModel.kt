@@ -53,7 +53,7 @@ class CreateEventViewModel(
             if (event.status != EventStatus.DRAFT) return@launch
             val fmtDate = DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val fmtTime = DateTimeFormatter.ofPattern("HH:mm")
-            val start = Instant.ofEpochMilli(event.date).atZone(ZoneId.systemDefault())
+            val start = Instant.ofEpochMilli(event.startTime).atZone(ZoneId.systemDefault())
             _uiState.update {
                 it.copy(
                     editingId = event.id,
@@ -61,10 +61,10 @@ class CreateEventViewModel(
                         title = event.title,
                         description = event.description,
                         location = event.location,
-                        date = if (event.date > 0) start.format(fmtDate) else "",
-                        time = if (event.date > 0) start.format(fmtTime) else "",
+                        date = if (event.startTime > 0) start.format(fmtDate) else "",
+                        time = if (event.startTime > 0) start.format(fmtTime) else "",
                         capacity = event.capacity.toString(),
-                        points = event.points.toString()
+                        points = event.requestedPoints.toString()
                     )
                 )
             }
@@ -129,8 +129,8 @@ class CreateEventViewModel(
             description = f.description.trim(),
             clubId = clubId,
             location = f.location.trim(),
-            date = EventValidation.parseDateTime(f.date, f.time) ?: 0L,
-            points = f.points.trim().toInt(),
+            startTime = EventValidation.parseDateTime(f.date, f.time) ?: 0L,
+            requestedPoints = f.points.trim().toInt(),
             capacity = f.capacity.trim().toInt()
         )
     }

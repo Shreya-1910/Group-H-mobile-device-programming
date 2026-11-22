@@ -30,7 +30,7 @@ class FirebaseEventRepository(
             // 在客戶端過濾日期並排序，避免需要建立 Firestore 複合索引
             .map { list ->
                 val now = System.currentTimeMillis()
-                list.filter { it.date >= now }.sortedBy { it.date }
+                list.filter { it.startTime >= now }.sortedBy { it.startTime }
             }
 
     override fun getEvent(id: String): Flow<Event?> = callbackFlow {
@@ -44,7 +44,7 @@ class FirebaseEventRepository(
     override fun getClubEvents(clubId: String): Flow<List<Event>> =
         events.whereEqualTo("clubId", clubId)
             .snapshotFlow()
-            .map { list -> list.sortedByDescending { it.date } }
+            .map { list -> list.sortedByDescending { it.startTime } }
 
     override suspend fun saveDraft(event: Event): String =
         write(event.copy(status = EventStatus.DRAFT, submittedAt = null))

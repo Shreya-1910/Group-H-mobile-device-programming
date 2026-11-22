@@ -3,23 +3,35 @@ package com.mdpgroup08.scpd.data.model
 import com.google.firebase.firestore.DocumentId
 import com.google.firebase.firestore.Exclude
 
-enum class EventStatus { DRAFT, PENDING, APPROVED, REJECTED, CANCELLED }
+/** Event lifecycle (R1): DRAFT → PENDING → APPROVED / REJECTED. APPROVED can become CANCELLED; PENDING becomes EXPIRED if not reviewed by the start time. */
+enum class EventStatus { DRAFT, PENDING, APPROVED, REJECTED, CANCELLED, EXPIRED }
 
-// Firestore 的 toObject() 需要所有欄位都有預設值
+/** An event created by a club (R1) and listed in the Marketplace once approved (R2). Times are epoch milliseconds. */
 data class Event(
     @DocumentId val id: String = "",
     val title: String = "",
     val description: String = "",
+    val category: String = "",
     val clubId: String = "",
+    val clubName: String = "",            // stored here so Marketplace cards need no extra lookup (R2-S1)
     val location: String = "",
-    val date: Long = 0L,              // 活動開始時間 (epoch millis)
-    val points: Int = 0,
+    val venueLat: Double? = null,         // optional, used by the location check (R3-S12)
+    val venueLng: Double? = null,
+    val startTime: Long = 0L,
+    val endTime: Long = 0L,
+    val requestedPoints: Int = 0,         // 1–10, set by the club (R1-S1)
+    val approvedPoints: Int? = null,      // set by the admin on approval, ≤ requestedPoints (R1-S4)
     val capacity: Int = 0,
     val bookedCount: Int = 0,
     val status: EventStatus = EventStatus.DRAFT,
-    val submittedAt: Long? = null
+    val rejectionReason: String? = null,      // required when rejected (R1-S5)
+    val cancellationReason: String? = null,   // required when cancelled (R1-S9)
+    val createdAt: Long = 0L,
+    val submittedAt: Long? = null             // review due 5 working days after this (R1-S4)
 ) {
-    // 計算屬性：必須加 @get:Exclude，否則會被寫進 Firestore
     @get:Exclude
-    val seatsLeft: Int get() = capacity - bookedCount
+    val seatsLeft: Int get() = (capacity - bookedCount).coerceAtLeast(0)
+
+    @get:Exclude
+    val isFull: Boolean get() = seatsLeft == 0
 }

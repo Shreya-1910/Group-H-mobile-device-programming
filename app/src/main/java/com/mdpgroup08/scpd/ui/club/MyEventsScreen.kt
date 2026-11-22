@@ -71,8 +71,8 @@ fun MyEventsScreen(
 
 @Composable
 private fun ClubEventCard(event: Event, onEdit: () -> Unit) {
-    val dateText = if (event.date > 0)
-        SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault()).format(Date(event.date))
+    val dateText = if (event.startTime > 0)
+        SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault()).format(Date(event.startTime))
     else "Date not set"
 
     Card(Modifier.fillMaxWidth()) {
@@ -83,7 +83,7 @@ private fun ClubEventCard(event: Event, onEdit: () -> Unit) {
             }
             Spacer(Modifier.height(4.dp))
             Text(dateText, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("${event.location} • Capacity ${event.capacity} • ${event.points} points",
+            Text("${event.location} • Capacity ${event.capacity} • ${event.requestedPoints} points",
                 style = MaterialTheme.typography.bodySmall)
 
             when (event.status) {
@@ -109,6 +109,7 @@ private fun StatusChip(status: EventStatus) {
         EventStatus.APPROVED -> "✓ Approved" to Color(0xFF2E7D32)
         EventStatus.REJECTED -> "✕ Rejected" to Color(0xFFC62828)
         EventStatus.CANCELLED -> "⊘ Cancelled" to Color(0xFF424242)
+        EventStatus.EXPIRED -> TODO()
     }
     Surface(color = color, shape = RoundedCornerShape(50)) {
         Text(label, color = Color.White, style = MaterialTheme.typography.labelMedium,

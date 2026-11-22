@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
-/** What the My events screen shows. */
+/** What My events screen shows. */
 sealed interface MyEventsUiState {
     data object Loading : MyEventsUiState
     data class Success(val events: List<Event>) : MyEventsUiState
@@ -44,7 +44,7 @@ class MyEventsViewModel(
             eventRepository.getClubEvents(clubId)
                 .catch { _uiState.value = MyEventsUiState.Error("Couldn't load your events. Check your connection.") }
                 .collect { list ->
-                    _uiState.value = MyEventsUiState.Success(list.sortedByDescending { it.date })
+                    _uiState.value = MyEventsUiState.Success(list.sortedByDescending { it.startTime })
                 }
         }
     }
