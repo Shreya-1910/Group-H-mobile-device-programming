@@ -22,8 +22,9 @@ enum class SaveAction { DRAFT, SUBMIT }
 data class CreateEventUiState(
     val form: EventForm = EventForm(),
     val errors: EventFormErrors = EventFormErrors(),
-    /** Id of the draft being edited, or "" for a new event. */
+    /** ID of the draft being edited, or "" for a new event. */
     val editingId: String = "",
+    val editingCreatedAt: Long = 0L,
     val isSaving: Boolean = false,
     val showSubmitConfirm: Boolean = false,
     val saveError: String? = null,
@@ -54,15 +55,19 @@ class CreateEventViewModel(
             val fmtDate = DateTimeFormatter.ofPattern("dd/MM/yyyy")
             val fmtTime = DateTimeFormatter.ofPattern("HH:mm")
             val start = Instant.ofEpochMilli(event.startTime).atZone(ZoneId.systemDefault())
+            val end = Instant.ofEpochMilli(event.endTime).atZone(ZoneId.systemDefault())
             _uiState.update {
                 it.copy(
                     editingId = event.id,
+                    editingCreatedAt = event.createdAt,
                     form = EventForm(
                         title = event.title,
                         description = event.description,
+                        category = event.category,
                         location = event.location,
                         date = if (event.startTime > 0) start.format(fmtDate) else "",
                         time = if (event.startTime > 0) start.format(fmtTime) else "",
+                        endTime = if (event.endTime > 0) end.format(fmtTime) else "",
                         capacity = event.capacity.toString(),
                         points = event.requestedPoints.toString()
                     )
@@ -127,11 +132,14 @@ class CreateEventViewModel(
             id = state.editingId,
             title = f.title.trim(),
             description = f.description.trim(),
+            category = f.category,
             clubId = clubId,
             location = f.location.trim(),
             startTime = EventValidation.parseDateTime(f.date, f.time) ?: 0L,
+            endTime = EventValidation.parseDateTime(f.date, f.endTime) ?: 0L,
             requestedPoints = f.points.trim().toInt(),
-            capacity = f.capacity.trim().toInt()
+            capacity = f.capacity.trim().toInt(),
+            createdAt = if (state.editingCreatedAt > 0) state.editingCreatedAt else clock()
         )
     }
 }

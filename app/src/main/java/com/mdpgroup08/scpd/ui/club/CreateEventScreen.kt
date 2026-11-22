@@ -32,6 +32,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.CreateEventViewModel
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.mdpgroup08.scpd.viewmodel.EventValidation
 
 /** Create event (R1-S1, R1-S2). Pass a draft's id to edit it. */
 @Composable
@@ -69,13 +76,17 @@ fun CreateEventScreen(
         Field("Description", f.description, null, "description", singleLine = false) {
             viewModel.onFormChange(f.copy(description = it))
         }
+        CategoryField(f.category, e.category) { viewModel.onFormChange(f.copy(category = it)) }
         Field("Location", f.location, e.location, "location") { viewModel.onFormChange(f.copy(location = it)) }
+        Field("Date (dd/MM/yyyy)", f.date, e.dateTime, "date") {
+            viewModel.onFormChange(f.copy(date = it))
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Field("Date (dd/MM/yyyy)", f.date, e.dateTime, "date", Modifier.weight(1f)) {
-                viewModel.onFormChange(f.copy(date = it))
-            }
-            Field("Time (HH:mm)", f.time, null, "time", Modifier.weight(1f)) {
+            Field("Start time (HH:mm)", f.time, null, "time", Modifier.weight(1f)) {
                 viewModel.onFormChange(f.copy(time = it))
+            }
+            Field("End time (HH:mm)", f.endTime, e.endTime, "endTime", Modifier.weight(1f)) {
+                viewModel.onFormChange(f.copy(endTime = it))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -147,4 +158,32 @@ private fun Field(
         keyboardOptions = if (number) KeyboardOptions(keyboardType = KeyboardType.Number) else KeyboardOptions.Default,
         modifier = modifier.testTag(tag)
     )
+}
+
+/** Read-only field that opens a list of categories when tapped. */
+@Composable
+private fun CategoryField(value: String, error: String?, onSelect: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Category") },
+            trailingIcon = { Text("▾") },
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            modifier = Modifier.fillMaxWidth().testTag("category")
+        )
+        // Transparent layer so tapping anywhere on the field opens the menu
+        Box(Modifier.matchParentSize().clickable { expanded = true })
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            EventValidation.CATEGORIES.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category) },
+                    onClick = { onSelect(category); expanded = false }
+                )
+            }
+        }
+    }
 }
