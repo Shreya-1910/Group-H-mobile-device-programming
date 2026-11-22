@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 /** What My events screen shows. */
 sealed interface MyEventsUiState {
     data object Loading : MyEventsUiState
-    data class Success(val events: List<Event>) : MyEventsUiState
+    data class Success(val events: List<ClubEventItem>) : MyEventsUiState
     data class Error(val message: String) : MyEventsUiState
 }
 
@@ -49,7 +49,9 @@ class MyEventsViewModel(
                     }
                 }
                 .collect { list ->
-                    _uiState.value = MyEventsUiState.Success(list.sortedByDescending { it.startTime })
+                    _uiState.value = MyEventsUiState.Success(
+                        list.sortedByDescending { it.startTime }.map { ClubEventStatus.toItem(it) }
+                    )
                 }
         }
     }
