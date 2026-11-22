@@ -34,7 +34,7 @@ fun MarketplaceScreen(
 
 @Composable
 fun EventCard(event: Event) {
-    val dateText = SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date(event.date))
+    val dateText = SimpleDateFormat("d MMM, h:mm a", Locale.getDefault()).format(Date(event.startTime))
     val full = event.seatsLeft <= 0
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -42,7 +42,7 @@ fun EventCard(event: Event) {
             Text(event.title, style = MaterialTheme.typography.titleMedium)
             Text("${event.clubId} • $dateText")
             Spacer(Modifier.height(8.dp))
-            Text("${event.points} s-CPD points")
+            Text("${event.requestedPoints} s-CPD points")
             Text(
                 if (full) "Event full" else "${event.seatsLeft} places left",
                 color = if (full) MaterialTheme.colorScheme.error
