@@ -52,6 +52,8 @@ class FirebaseEventRepository(
     override suspend fun submit(event: Event): String =
         write(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
 
+    override fun newId(): String = events.document().id
+
     private suspend fun write(event: Event): String {
         val doc = if (event.id.isBlank()) events.document() else events.document(event.id)
         doc.set(event).await()

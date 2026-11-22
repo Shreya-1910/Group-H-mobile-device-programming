@@ -39,6 +39,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.mdpgroup08.scpd.viewmodel.EventValidation
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 
 /** Create event (R1-S1, R1-S2). Pass a draft's id to edit it. */
 @Composable
@@ -109,12 +111,12 @@ fun CreateEventScreen(
         ) {
             OutlinedButton(
                 onClick = viewModel::saveDraft,
-                enabled = !state.isSaving,
+                enabled = !state.isSaving && !state.isOffline,
                 modifier = Modifier.weight(1f).height(48.dp)
             ) { Text("Save draft") }
             Button(
                 onClick = viewModel::requestSubmit,
-                enabled = !state.isSaving,
+                enabled = !state.isSaving && !state.isOffline,
                 modifier = Modifier.weight(1f).height(48.dp)
             ) { Text("Submit") }
         }
@@ -134,6 +136,20 @@ fun CreateEventScreen(
             confirmButton = { TextButton(onClick = viewModel::confirmSubmit) { Text("Submit") } },
             dismissButton = { TextButton(onClick = viewModel::dismissSubmit) { Text("Keep editing") } }
         )
+    }
+
+    if (state.isOffline) {
+        Surface(
+            color = MaterialTheme.colorScheme.errorContainer,
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth().testTag("offline_banner")
+        ) {
+            Text(
+                "You're offline. You can keep filling in the form, but saving and submitting need a connection.",
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(12.dp)
+            )
+        }
     }
 }
 
