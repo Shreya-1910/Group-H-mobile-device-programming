@@ -40,7 +40,8 @@ class CreateEventViewModelTest {
             studyDetails: StudyDetails
         ) {}
         override suspend fun currentUserRole() = UserRole.CLUB
-        override suspend fun currentUser(): User? = null
+        override suspend fun currentUser(): User? =
+            if (clubId != null) User(id = "user_1", role = "CLUB", clubId = clubId, name = "Robotics Club", clubName = "Robotics Club") else null
         override suspend fun currentClubId() = clubId
         override suspend fun verifyCheckInDevice(): Boolean = true
         override fun signOut() {}

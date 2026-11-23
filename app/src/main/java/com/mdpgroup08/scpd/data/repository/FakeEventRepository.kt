@@ -22,6 +22,9 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     override fun getClubEvents(clubId: String): Flow<List<Event>> =
         store.map { list -> list.filter { it.clubId == clubId } }
 
+    override fun getPendingEvents(): Flow<List<Event>> =
+        store.map { list -> list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: it.createdAt } }
+
     override suspend fun saveDraft(event: Event): String =
         upsert(event.copy(status = EventStatus.DRAFT, submittedAt = null))
 
@@ -29,6 +32,18 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
 
     override suspend fun submit(event: Event): String =
         upsert(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
+
+    override suspend fun approveEvent(eventId: String, approvedPoints: Int, reason: String, adminUid: String) {
+        store.value = store.value.map {
+            if (it.id == eventId) it.copy(status = EventStatus.APPROVED, approvedPoints = approvedPoints) else it
+        }
+    }
+
+    override suspend fun rejectEvent(eventId: String, reason: String, adminUid: String) {
+        store.value = store.value.map {
+            if (it.id == eventId) it.copy(status = EventStatus.REJECTED, rejectionReason = reason) else it
+        }
+    }
 
     /** Used by FakeBookingRepository to keep the booked count in step. */
     fun incrementBooked(eventId: String) {
@@ -47,7 +62,7 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         private const val HOUR = 60L * 60 * 1000
         private const val DAY = 24 * HOUR
 
-        /** Five sample events; "Beach Clean-up" is full so the full-event state can be tested. */
+        /** Sample events */
         fun sampleEvents(): List<Event> {
             val now = System.currentTimeMillis()
             return listOf(

@@ -202,7 +202,7 @@ fun AdminHome(onLogOut: () -> Unit) {
         bottomBar = { BottomBar(tabNav, adminTabs) }
     ) { padding ->
         NavHost(tabNav, startDestination = adminTabs.first().route, modifier = Modifier.padding(padding)) {
-            composable("admin_queue") { ComingSoonScreen("Approval queue", release = 2) }
+            composable("admin_queue") { com.mdpgroup08.scpd.ui.admin.ApprovalQueueScreen() }
             composable("admin_accounts") { com.mdpgroup08.scpd.ui.admin.AdminScreen() }
             composable("admin_audit") { com.mdpgroup08.scpd.ui.admin.AdminScreen() }
         }
