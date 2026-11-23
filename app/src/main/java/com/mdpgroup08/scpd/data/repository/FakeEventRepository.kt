@@ -5,11 +5,14 @@ import com.mdpgroup08.scpd.data.model.EventStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import com.mdpgroup08.scpd.data.model.AuditEntry
 
 /** In-memory EventRepository for tests and for running the app without Firebase. */
 class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventRepository {
 
     private val store = MutableStateFlow(initial)
+    /** Audit entries written by approve/reject, so tests can check them. */
+    val auditLog = mutableListOf<AuditEntry>()
 
     override fun getApprovedUpcomingEvents(): Flow<List<Event>> = store.map { list ->
         val now = System.currentTimeMillis()
@@ -29,6 +32,31 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
 
     override suspend fun submit(event: Event): String =
         upsert(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
+
+
+    override fun getPendingEvents(): Flow<List<Event>> = store.map { list ->
+        list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: Long.MAX_VALUE }
+    }
+
+    override suspend fun approve(eventId: String, approvedPoints: Int, note: String, adminId: String) =
+        decide(eventId, adminId, "EVENT_APPROVED", note) {
+            it.copy(status = EventStatus.APPROVED, approvedPoints = approvedPoints)
+        }
+
+    override suspend fun reject(eventId: String, reason: String, adminId: String) =
+        decide(eventId, adminId, "EVENT_REJECTED", reason) {
+            it.copy(status = EventStatus.REJECTED, rejectionReason = reason)
+        }
+
+    private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
+        val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
+        if (event.status != EventStatus.PENDING) throw EventDecisionException.AlreadyDecided
+        store.value = store.value.map { if (it.id == eventId) change(it) else it }
+        auditLog += AuditEntry(
+            id = "event_${eventId}_decision", actorId = adminId, action = action,
+            targetId = eventId, reason = reason, timestamp = System.currentTimeMillis()
+        )
+    }
 
     /** Used by FakeBookingRepository to keep the booked count in step. */
     fun incrementBooked(eventId: String) {
