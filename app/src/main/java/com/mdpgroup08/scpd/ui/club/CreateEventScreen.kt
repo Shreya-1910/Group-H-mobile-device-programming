@@ -39,8 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.mdpgroup08.scpd.viewmodel.EventValidation
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Surface
+import com.mdpgroup08.scpd.ui.components.OfflineBanner
 
 /** Create event (R1-S1, R1-S2). Pass a draft's id to edit it. */
 @Composable
@@ -139,17 +138,7 @@ fun CreateEventScreen(
     }
 
     if (state.isOffline) {
-        Surface(
-            color = MaterialTheme.colorScheme.errorContainer,
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth().testTag("offline_banner")
-        ) {
-            Text(
-                "You're offline. You can keep filling in the form, but saving and submitting need a connection.",
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.padding(12.dp)
-            )
-        }
+        OfflineBanner("You're offline. You can keep filling in the form, but saving and submitting need a connection.")
     }
 }
 
