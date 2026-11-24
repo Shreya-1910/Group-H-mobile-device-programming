@@ -134,7 +134,8 @@ class CreateEventViewModel(
         viewModelScope.launch {
             try {
                 val user = authRepository.currentUser()
-                if (user?.role != UserRole.CLUB.name) {
+                // Use equals with ignoreCase to support both "CLUB" and "club"
+                if (user?.role?.equals(UserRole.CLUB.name, ignoreCase = true) != true) {
                     throw IllegalStateException("Only club accounts can create events. You are logged in as an ${user?.role ?: "User"}.")
                 }
                 val clubId = user.clubId?.ifBlank { null }

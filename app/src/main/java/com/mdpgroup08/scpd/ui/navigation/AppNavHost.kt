@@ -6,6 +6,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mdpgroup08.scpd.data.model.UserRole
 import com.mdpgroup08.scpd.ui.auth.LoginScreen
 import com.mdpgroup08.scpd.ui.auth.RegisterScreen
@@ -29,11 +32,18 @@ fun AppNavHost(
     sessionViewModel: SessionViewModel =
         viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val isDeactivated by sessionViewModel.isDeactivated.collectAsStateWithLifecycle()
+
     val logOut: () -> Unit = {
         sessionViewModel.signOut()
-
         navController.navigate(Routes.LOGIN) {
             popUpTo(0) { inclusive = true }
+        }
+    }
+
+    LaunchedEffect(isDeactivated) {
+        if (isDeactivated) {
+            logOut()
         }
     }
 

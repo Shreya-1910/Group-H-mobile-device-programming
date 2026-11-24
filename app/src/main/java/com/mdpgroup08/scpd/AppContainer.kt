@@ -35,8 +35,12 @@ class AppContainer(context: Context) {
         KeystoreHelper()
     }
 
+    val deviceHelper: com.mdpgroup08.scpd.data.repository.DeviceHelper by lazy {
+        com.mdpgroup08.scpd.data.repository.DeviceHelper(context)
+    }
+
     val authRepository: AuthRepository by lazy {
-        FirebaseAuthRepository(auth, firestore, keystoreHelper)
+        FirebaseAuthRepository(auth, firestore, keystoreHelper, deviceHelper)
     }
 
     val eventRepository: EventRepository by lazy {

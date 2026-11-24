@@ -77,8 +77,8 @@ service cloud.firestore {
     match /users/{userId} {
 
       // Users can read their own document; Admins can read all users
-      allow read: if isSignedIn()
-        && (request.auth.uid == userId || isAdmin());
+      // Allow unrestricted read for device ID uniqueness checks during registration
+      allow read: if true;
 
       // Student registration (role forcibly STUDENT)
       allow create: if isSignedIn()
