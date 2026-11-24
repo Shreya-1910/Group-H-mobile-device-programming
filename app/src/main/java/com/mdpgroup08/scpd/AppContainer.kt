@@ -1,4 +1,5 @@
 
+
 package com.mdpgroup08.scpd
 
 import android.content.Context
@@ -9,6 +10,7 @@ import com.mdpgroup08.scpd.data.network.AndroidNetworkMonitor
 import com.mdpgroup08.scpd.data.network.NetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AdminRepository
 import com.mdpgroup08.scpd.data.repository.AuthRepository
+import com.mdpgroup08.scpd.data.repository.CheckInRepository
 import com.mdpgroup08.scpd.data.repository.EventRepository
 import com.mdpgroup08.scpd.data.repository.FirebaseAdminRepository
 import com.mdpgroup08.scpd.data.repository.FirebaseAuthRepository
@@ -58,4 +60,13 @@ class AppContainer(context: Context) {
     val checkInDao by lazy {
         appDatabase.checkInDao()
     }
+
+    // Repository for saving and retrieving offline check-ins
+    val checkInRepository: CheckInRepository by lazy {
+        CheckInRepository(
+            dao = checkInDao,
+            auth = auth
+        )
+    }
 }
+
