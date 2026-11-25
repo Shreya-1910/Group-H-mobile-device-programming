@@ -95,11 +95,11 @@ class ApprovalQueueViewModel(
             try {
                 val adminUser = authRepository.currentUser()
                 val adminUid = adminUser?.id ?: ""
-                eventRepository.approveEvent(
+                eventRepository.approve(
                     eventId = event.id,
                     approvedPoints = points,
-                    reason = state.approveReasonInput.ifBlank { "Approved" },
-                    adminUid = adminUid
+                    note = state.approveReasonInput.trim(),
+                    adminId = adminUid
                 )
                 _uiState.update {
                     it.copy(
@@ -148,10 +148,10 @@ class ApprovalQueueViewModel(
             try {
                 val adminUser = authRepository.currentUser()
                 val adminUid = adminUser?.id ?: ""
-                eventRepository.rejectEvent(
+                eventRepository.reject(
                     eventId = event.id,
                     reason = reason,
-                    adminUid = adminUid
+                    adminId = adminUid
                 )
                 _uiState.update {
                     it.copy(
