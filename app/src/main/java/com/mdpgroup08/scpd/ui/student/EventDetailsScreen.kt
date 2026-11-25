@@ -3,7 +3,6 @@ package com.mdpgroup08.scpd.ui.student
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +26,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,7 +49,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Event details (R2-S3). The main button shows the student's state; all rules are in the ViewModel. */
+/** Event details (R2-S3) with book, waitlist, swap and cancel. All rules are in the ViewModel. */
 @Composable
 fun EventDetailsScreen(
     onBack: () -> Unit,
@@ -87,20 +88,86 @@ fun EventDetailsScreen(
                 is DetailsContent.Loaded -> DetailsBody(
                     content = content,
                     isOffline = state.isOffline,
-                    isBooking = state.isBooking,
-                    onBook = viewModel::book
+                    isWorking = state.isWorking,
+                    actions = ButtonActions(
+                        book = viewModel::book,
+                        swap = viewModel::requestSwap,
+                        cancel = viewModel::requestCancel,
+                        joinWaitlist = viewModel::joinWaitlist,
+                        leaveWaitlist = viewModel::leaveWaitlist
+                    )
                 )
             }
         }
     }
+
+    val loaded = state.content as? DetailsContent.Loaded
+
+    // R2-S7: keep the existing booking, or swap it for this event in one step
+    val clash = loaded?.action as? DetailsAction.Clashes
+    if (state.showSwapConfirm && loaded != null && clash != null) {
+        AlertDialog(
+            onDismissRequest = viewModel::keepExisting,
+            title = { Text("Swap your booking?") },
+            text = {
+                Text(
+                    "You'll give up your place at \"${clash.other.title}\" and book \"${loaded.event.title}\" " +
+                            "instead. You can't hold both because they overlap."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmSwap, modifier = Modifier.testTag("confirm_swap")) {
+                    Text("Swap")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::keepExisting, modifier = Modifier.testTag("keep_existing")) {
+                    Text("Keep my booking")
+                }
+            }
+        )
+    }
+
+    // R2-S8: cancel with confirmation, so a place isn't given away by accident
+    if (state.showCancelConfirm && loaded != null) {
+        AlertDialog(
+            onDismissRequest = viewModel::keepBooking,
+            title = { Text("Cancel your booking?") },
+            text = {
+                Text(
+                    "Your place at \"${loaded.event.title}\" will go to the next student on the waitlist. " +
+                            "You can book again later if places are still free."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmCancel, modifier = Modifier.testTag("confirm_cancel")) {
+                    Text("Cancel booking")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::keepBooking, modifier = Modifier.testTag("keep_booking")) {
+                    Text("Keep booking")
+                }
+            }
+        )
+    }
 }
+
+/** The taps the main button can make. */
+private data class ButtonActions(
+    val book: () -> Unit,
+    val swap: () -> Unit,
+    val cancel: () -> Unit,
+    val joinWaitlist: () -> Unit,
+    val leaveWaitlist: () -> Unit
+)
 
 @Composable
 private fun DetailsBody(
     content: DetailsContent.Loaded,
     isOffline: Boolean,
-    isBooking: Boolean,
-    onBook: () -> Unit
+    isWorking: Boolean,
+    actions: ButtonActions
 ) {
     val event = content.event
     val dateFormat = SimpleDateFormat("EEEE d MMMM, h:mm a", Locale.getDefault())
@@ -133,6 +200,7 @@ private fun DetailsBody(
             DetailRow("Where", event.location)
             DetailRow("Category", event.category.ifBlank { "Other" })
             DetailRow("Places", "${content.placesLeft} of ${event.capacity} left")
+            if (event.waitlist.isNotEmpty()) DetailRow("Waitlist", "${event.waitlist.size} waiting")
             if (event.description.isNotBlank()) {
                 HorizontalDivider()
                 Text(event.description, style = MaterialTheme.typography.bodyMedium)
@@ -140,7 +208,7 @@ private fun DetailsBody(
         }
 
         HorizontalDivider()
-        MainButton(content.action, isOffline, isBooking, onBook)
+        MainButton(content, isOffline, isWorking, actions)
     }
 }
 
@@ -152,39 +220,95 @@ private fun DetailRow(label: String, value: String) {
     }
 }
 
-/** R2-S3 AC1: Book, Booked ✓, Join waitlist, Clashes with [event] or Booking closed, plus a line explaining why. */
+/** What the button area shows for each state. */
+private data class ButtonSpec(
+    val status: String? = null,
+    val label: String,
+    val note: String,
+    val onClick: (() -> Unit)? = null,
+    val primary: Boolean = true
+)
+
+/** R2-S3 AC1: one main button for the student's state, a status line, and a note explaining why. */
 @Composable
-private fun MainButton(action: DetailsAction, isOffline: Boolean, isBooking: Boolean, onBook: () -> Unit) {
-    val (label, note) = when (action) {
-        DetailsAction.Book ->
-            "Book a place" to if (isOffline) "Booking needs a connection." else "Booking closes 2 hours before the start."
-        DetailsAction.Booked -> "Booked ✓" to "You have a place at this event."
-        DetailsAction.JoinWaitlist -> "Join waitlist" to "This event is full. The waitlist is coming in the next update."
+private fun MainButton(
+    content: DetailsContent.Loaded,
+    isOffline: Boolean,
+    isWorking: Boolean,
+    actions: ButtonActions
+) {
+    val spec = when (val action = content.action) {
+        DetailsAction.Book -> ButtonSpec(
+            label = "Book a place",
+            note = when {
+                content.leavesWaitlists.isNotEmpty() ->
+                    "Booking this removes you from the waitlist for \"${content.leavesWaitlists.first().title}\", which overlaps it."
+                isOffline -> "Booking needs a connection."
+                else -> "Booking closes 2 hours before the start."
+            },
+            onClick = actions.book
+        )
+        DetailsAction.Booked -> ButtonSpec(
+            status = "✓ You're booked",
+            label = "Cancel booking",
+            note = if (content.canCancel) "You can cancel until 2 hours before the start."
+            else "Cancellation closed 2 hours before the event.",
+            onClick = if (content.canCancel) actions.cancel else null,
+            primary = false
+        )
+        DetailsAction.JoinWaitlist -> ButtonSpec(
+            label = "Join waitlist",
+            note = "This event is full. If a place frees up, the first student in line is booked automatically.",
+            onClick = actions.joinWaitlist
+        )
+        is DetailsAction.OnWaitlist -> ButtonSpec(
+            status = "⏳ On the waitlist: #${action.position}",
+            label = "Leave waitlist",
+            note = if (action.isClosed) "The waitlist closed 2 hours before the start without a place becoming free."
+            else "You'll be booked automatically if a place frees up while you're first in line.",
+            onClick = if (action.isClosed) null else actions.leaveWaitlist,
+            primary = false
+        )
         is DetailsAction.Clashes ->
-            "Clashes with ${action.other.title}" to "You're already booked on \"${action.other.title}\" at the same time."
-        DetailsAction.BookingClosed -> "Booking closed" to "Booking closes 2 hours before the event starts."
-        DetailsAction.Unavailable -> "Not available" to "This event can't be booked."
+            if (action.canSwap) ButtonSpec(
+                label = "Swap for this event",
+                note = "Clashes with \"${action.other.title}\". Keep that booking or swap it for this one.",
+                onClick = actions.swap
+            ) else ButtonSpec(
+                label = "Clashes with ${action.other.title}",
+                note = "You're booked on \"${action.other.title}\" at the same time, and it can't be swapped now."
+            )
+        DetailsAction.BookingClosed -> ButtonSpec(
+            label = "Booking closed",
+            note = "Booking and the waitlist close 2 hours before the event starts."
+        )
+        DetailsAction.Unavailable -> ButtonSpec(label = "Not available", note = "This event can't be booked.")
     }
 
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-        if (action == DetailsAction.Book) {
-            Button(
-                onClick = onBook,
-                enabled = !isOffline && !isBooking,
-                modifier = Modifier.fillMaxWidth().height(52.dp).testTag("main_action")
-            ) {
-                if (isBooking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                else Text(label)
+        spec.status?.let {
+            Text(
+                it,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 8.dp).testTag("booking_status")
+            )
+        }
+        val enabled = spec.onClick != null && !isOffline && !isWorking
+        val modifier = Modifier.fillMaxWidth().height(52.dp).testTag("main_action")
+        if (spec.primary && spec.onClick != null) {
+            Button(onClick = spec.onClick, enabled = enabled, modifier = modifier) {
+                if (isWorking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                else Text(spec.label)
             }
         } else {
-            OutlinedButton(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.fillMaxWidth().height(52.dp).testTag("main_action")
-            ) { Text(label) }
+            OutlinedButton(onClick = { spec.onClick?.invoke() }, enabled = enabled, modifier = modifier) {
+                if (isWorking && spec.onClick != null) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                else Text(spec.label)
+            }
         }
         Text(
-            note,
+            spec.note,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp).testTag("main_action_note")

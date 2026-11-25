@@ -74,7 +74,7 @@ class EventDetailsViewModelTest {
     fun `overlapping booking shows Clashes with that event`() {
         val a = event("a", startsIn = 3 * day)
         val b = event("b", startsIn = 3 * day + hour)  // starts while a is still running
-        assertEquals(DetailsAction.Clashes(b), EventDetailsRules.actionFor(a, null, listOf(b), now))
+        assertEquals(DetailsAction.Clashes(b, canSwap = true), EventDetailsRules.actionFor(a, null, listOf(b), now))
     }
 
     @Test
