@@ -25,7 +25,8 @@ data class Event(
     val bookedCount: Int = 0,
     val status: EventStatus = EventStatus.DRAFT,
     val rejectionReason: String? = null,      // required when rejected (R1-S5)
-    val cancellationReason: String? = null,   // required when cancelled (R1-S9)
+    val cancellationReason: String? = null, // required when cancelled (R1-S9)
+    val waitlist: List<String> = emptyList(),
     val createdAt: Long = 0L,
     val submittedAt: Long? = null             // review due 5 working days after this (R1-S4)
 ) {

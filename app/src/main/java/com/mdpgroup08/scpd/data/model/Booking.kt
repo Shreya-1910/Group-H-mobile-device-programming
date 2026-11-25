@@ -12,13 +12,7 @@ data class Booking(
     val studentId: String = "",
     val status: BookingStatus = BookingStatus.CONFIRMED,
     val createdAt: Long = 0L,
-    val cancelledAt: Long? = null
-)
-
-/** A student waiting for a place on a full event (R2-S5). ID "{eventId}_{studentId}"; position is the order of joinedAt. */
-data class WaitlistEntry(
-    @DocumentId val id: String = "",
-    val eventId: String = "",
-    val studentId: String = "",
-    val joinedAt: Long = 0L
+    val cancelledAt: Long? = null,
+    /** True when the place came from the waitlist, so the student can be told (R2-S5 AC2, R5-S17). */
+    val fromWaitlist: Boolean = false
 )

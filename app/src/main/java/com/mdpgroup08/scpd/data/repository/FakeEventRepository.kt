@@ -73,6 +73,11 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         }
     }
 
+    /** Changes one stored event; used by FakeBookingRepository for counts and the waitlist. */
+    fun update(eventId: String, change: (Event) -> Event) {
+        store.value = store.value.map { if (it.id == eventId) change(it) else it }
+    }
+
     private fun upsert(event: Event): String {
         val id = event.id.ifBlank { newId() }
         store.value = store.value.filter { it.id != id } + event.copy(id = id)
