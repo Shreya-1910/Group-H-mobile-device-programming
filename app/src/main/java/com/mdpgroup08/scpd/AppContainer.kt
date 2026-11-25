@@ -16,6 +16,8 @@ import com.mdpgroup08.scpd.data.repository.FirebaseAdminRepository
 import com.mdpgroup08.scpd.data.repository.FirebaseAuthRepository
 import com.mdpgroup08.scpd.data.repository.FirebaseEventRepository
 import com.mdpgroup08.scpd.data.repository.KeystoreHelper
+import com.mdpgroup08.scpd.data.repository.BookingRepository
+import com.mdpgroup08.scpd.data.repository.FirebaseBookingRepository
 
 /**
  * Shared dependency container providing repositories,
@@ -45,6 +47,10 @@ class AppContainer(context: Context) {
 
     val eventRepository: EventRepository by lazy {
         FirebaseEventRepository(firestore)
+    }
+
+    val bookingRepository: BookingRepository by lazy {
+        FirebaseBookingRepository(firestore, auth)
     }
 
     val adminRepository: AdminRepository by lazy {

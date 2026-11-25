@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.mdpgroup08.scpd.ScpdApplication
+import androidx.lifecycle.createSavedStateHandle
 
 /**
  * Creates every ViewModel with its repositories.
@@ -86,6 +87,16 @@ object AppViewModelProvider {
         initializer {
             val c = scpdApplication().container
             MarketplaceViewModel(c.eventRepository, c.networkMonitor)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            EventDetailsViewModel(
+                createSavedStateHandle(),
+                c.eventRepository,
+                c.bookingRepository,
+                c.networkMonitor
+            )
         }
     }
 }

@@ -48,6 +48,7 @@ import com.mdpgroup08.scpd.ui.club.MyEventsScreen
 import com.mdpgroup08.scpd.ui.student.ManualCheckInScreen
 import com.mdpgroup08.scpd.ui.student.MarketplaceScreen
 import com.mdpgroup08.scpd.ui.student.PointsScreen
+import com.mdpgroup08.scpd.ui.student.EventDetailsScreen
 
 /** One bottom-bar tab. */
 data class Tab(
@@ -128,6 +129,16 @@ fun StudentHome(onLogOut: () -> Unit) {
 
             composable("student_profile") {
                 ComingSoonScreen("Profile", onLogOut = onLogOut)
+            }
+
+            // R2-S1, R2-S2: browse and search approved events
+            composable("student_marketplace") {
+                MarketplaceScreen(onOpenEvent = { id -> tabNav.navigate("student_event/$id") })
+            }
+
+            // R2-S3: event details with the state-aware main button
+            composable("student_event/{eventId}") {
+                EventDetailsScreen(onBack = { tabNav.popBackStack() })
             }
         }
     }

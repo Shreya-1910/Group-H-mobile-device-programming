@@ -15,4 +15,6 @@ interface BookingRepository {
 
     suspend fun book(eventId: String)
     fun getMyBooking(eventId: String): Flow<Booking?>
+    /** The signed-in student's confirmed bookings, used for clash checks (R2-S7). */
+    fun getMyBookings(): Flow<List<Booking>>
 }
