@@ -32,7 +32,7 @@ object ReviewDeadline {
 
 /** Turns an event's status into the message the club sees (R1-S3, R1-S6, R1-S8). */
 object ClubEventStatus {
-    private val dateFormat = DateTimeFormatter.ofPattern("EEE d MMM")
+    private val dateFormat = DateTimeFormatter.ofPattern("EEE d MMM", java.util.Locale.ENGLISH)
     private const val LOCKED = "Submitted events can't be edited. To make a change, cancel it and create a new event."
 
     fun toItem(event: Event, zone: ZoneId = ZoneId.systemDefault()): ClubEventItem = when (event.status) {

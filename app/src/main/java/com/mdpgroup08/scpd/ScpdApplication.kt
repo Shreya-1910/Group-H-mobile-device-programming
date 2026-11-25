@@ -1,18 +1,30 @@
+
 package com.mdpgroup08.scpd
 
 import android.app.Application
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-/**
- * Created once by Android when the app starts.
- * Holds the AppContainer so every ViewModel shares the same repositories.
- */
+class ScpdApplication : Application() {
 
-class ScpdApplication: Application() {
     lateinit var container: AppContainer
         private set
 
     override fun onCreate() {
         super.onCreate()
+
         container = AppContainer(this)
+
+        // Test Room database creation and access.
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                container.checkInDao.getPending("__room_test__")
+                android.util.Log.d("ROOM_TEST", "Room database read successful")
+            } catch (e: Exception) {
+                android.util.Log.e("ROOM_TEST", "Room database test failed", e)
+            }
+        }
     }
 }
+

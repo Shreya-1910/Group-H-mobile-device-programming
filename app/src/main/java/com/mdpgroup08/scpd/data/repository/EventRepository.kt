@@ -9,10 +9,15 @@ sealed class EventDecisionException(message: String) : Exception(message) {
     object AlreadyDecided : EventDecisionException("Event already decided")
     object NotFound : EventDecisionException("Event not found")
 }
+
 interface EventRepository {
     fun getApprovedUpcomingEvents(): Flow<List<Event>>
     fun getEvent(id: String): Flow<Event?>
     fun getClubEvents(clubId: String): Flow<List<Event>>
+
+    /** Pending events for the admin approval queue (R1-S4). */
+    fun getPendingEvents(): Flow<List<Event>>
+
     /** A new, unused event ID, reserved before the first save so a retry can't create a duplicate. */
     fun newId(): String
 
@@ -21,9 +26,6 @@ interface EventRepository {
 
     /** Sets status to PENDING, submittedAt = now, and returns document ID */
     suspend fun submit(event: Event): String
-
-    /** Pending events for the admin approval queue (R1-S4). */
-    fun getPendingEvents(): Flow<List<Event>>
 
     /**
      * Admin approves a Pending event with the confirmed points (R1-S4).

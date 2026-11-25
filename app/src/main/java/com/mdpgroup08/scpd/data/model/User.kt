@@ -11,6 +11,7 @@ data class User(
     val email: String = "",
     val role: String = "STUDENT",                 // R6-S2: "STUDENT", "CLUB", "ADMIN"
     val clubId: String? = null,
+    val clubName: String? = null,
     val pdpaAccepted: Boolean = false,            // R6-S1: Privacy notice acceptance
     val accountStatus: String = AccountStatus.ACTIVE.name, // R6-S1, R6-S4, R6-S5
     val registeredAt: Long = System.currentTimeMillis(),

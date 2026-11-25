@@ -2,6 +2,7 @@ package com.mdpgroup08.scpd.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.mdpgroup08.scpd.data.model.AuditEntry
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
 import kotlinx.coroutines.channels.awaitClose
@@ -48,11 +49,99 @@ class FirebaseEventRepository(
             .snapshotFlow()
             .map { list -> list.sortedByDescending { it.startTime } }
 
+    override fun getPendingEvents(): Flow<List<Event>> =
+        events.whereEqualTo("status", EventStatus.PENDING.name)
+            .snapshotFlow()
+            .map { list -> list.sortedBy { it.submittedAt ?: it.createdAt } }
+
     override suspend fun saveDraft(event: Event): String =
         write(event.copy(status = EventStatus.DRAFT, submittedAt = null))
 
     override suspend fun submit(event: Event): String =
         write(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
+
+    override suspend fun approveEvent(
+        eventId: String,
+        approvedPoints: Int,
+        reason: String,
+        adminUid: String
+    ) {
+        val now = System.currentTimeMillis()
+        // 1. Update event status in Firestore
+        events.document(eventId).update(
+            mapOf(
+                "status" to EventStatus.APPROVED.name,
+                "approvedPoints" to approvedPoints
+            )
+        ).await()
+
+        // 2. Write audit log document: auditLog/event_{id}_decision (R1-S4 / R6-S6)
+        val decisionMap = mapOf(
+            "actorId" to adminUid,
+            "action" to "EVENT_APPROVED",
+            "targetId" to eventId,
+            "approvedPoints" to approvedPoints,
+            "reason" to reason,
+            "timestamp" to now
+        )
+        db.collection("auditLog").document("event_${eventId}_decision").set(decisionMap).await()
+
+        // Also record in audit_logs collection if available
+        try {
+            db.collection("audit_logs").add(
+                AuditEntry(
+                    actorId = adminUid,
+                    action = "EVENT_APPROVED",
+                    targetId = eventId,
+                    reason = "Approved $approvedPoints points: $reason",
+                    timestamp = now
+                )
+            ).await()
+        } catch (e: Exception) {
+            // Secondary log fallback
+        }
+    }
+
+    override suspend fun rejectEvent(
+        eventId: String,
+        reason: String,
+        adminUid: String
+    ) {
+        val now = System.currentTimeMillis()
+        // 1. Update event status in Firestore
+        events.document(eventId).update(
+            mapOf(
+                "status" to EventStatus.REJECTED.name,
+                "rejectionReason" to reason
+            )
+        ).await()
+
+        // 2. Write audit log document: auditLog/event_{id}_decision (R1-S5 / R6-S6)
+        val decisionMap = mapOf(
+            "actorId" to adminUid,
+            "action" to "EVENT_REJECTED",
+            "targetId" to eventId,
+            "rejectionReason" to reason,
+            "reason" to reason,
+            "timestamp" to now
+        )
+        db.collection("auditLog").document("event_${eventId}_decision").set(decisionMap).await()
+
+        // Also record in audit_logs collection if available
+        try {
+            db.collection("audit_logs").add(
+                AuditEntry(
+                    actorId = adminUid,
+                    action = "EVENT_REJECTED",
+                    targetId = eventId,
+                    reason = reason,
+                    timestamp = now
+                )
+            ).await()
+        } catch (e: Exception) {
+            // Secondary log fallback
+        }
+    }
 
     override fun newId(): String = events.document().id
 

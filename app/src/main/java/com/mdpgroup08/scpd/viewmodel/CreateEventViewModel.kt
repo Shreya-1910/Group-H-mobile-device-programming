@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
+import com.mdpgroup08.scpd.data.model.UserRole
 import com.mdpgroup08.scpd.data.network.NetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AuthRepository
 import com.mdpgroup08.scpd.data.repository.EventRepository
@@ -24,14 +25,13 @@ enum class SaveAction { DRAFT, SUBMIT }
 data class CreateEventUiState(
     val form: EventForm = EventForm(),
     val errors: EventFormErrors = EventFormErrors(),
-    /** Id of the draft being edited, or "" for a new event. */
+    /** ID of the draft being edited, or "" for a new event. */
     val editingId: String = "",
-    /** createdAt of the draft being edited, so editing doesn't reset it. */
-    val editingCreatedAt: Long = 0L,
-    /** Id reserved for a new event on its first save attempt, so a retry overwrites instead of duplicating. */
+    /** Reserved ID for a new event, so a retry uses the same document. */
     val savingId: String = "",
-    val isOffline: Boolean = false,
+    val editingCreatedAt: Long = 0L,
     val isSaving: Boolean = false,
+    val isOffline: Boolean = false,
     val showSubmitConfirm: Boolean = false,
     val saveError: String? = null,
     val lastAction: SaveAction? = null,
@@ -44,17 +44,18 @@ class CreateEventViewModel(
     private val eventRepository: EventRepository,
     private val authRepository: AuthRepository,
     private val networkMonitor: NetworkMonitor,
-    private val clock: () -> Long = { System.currentTimeMillis() },
-    private val saveTimeoutMs: Long = SAVE_TIMEOUT_MS
+    private val saveTimeoutMs: Long = SAVE_TIMEOUT_MS,
+    private val clock: () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CreateEventUiState(isOffline = !networkMonitor.isOnline.value))
+    private val _uiState = MutableStateFlow(CreateEventUiState())
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
     init {
-        // Keep the offline banner and buttons in step with the connection (R1-S2 AC2)
         viewModelScope.launch {
-            networkMonitor.isOnline.collect { online -> _uiState.update { it.copy(isOffline = !online) } }
+            networkMonitor.isOnline.collect { online ->
+                _uiState.update { it.copy(isOffline = !online) }
+            }
         }
     }
 
@@ -132,9 +133,16 @@ class CreateEventViewModel(
 
         viewModelScope.launch {
             try {
-                val clubId = authRepository.currentClubId()
-                    ?: throw IllegalStateException("No club linked to this account")
-                val event = buildEvent(state, clubId).copy(id = id)
+                val user = authRepository.currentUser()
+                // Use equals with ignoreCase to support both "CLUB" and "club"
+                if (user?.role?.equals(UserRole.CLUB.name, ignoreCase = true) != true) {
+                    throw IllegalStateException("Only club accounts can create events. You are logged in as an ${user?.role ?: "User"}.")
+                }
+                val clubId = user.clubId?.ifBlank { null }
+                    ?: throw IllegalStateException("No club linked to this account. Please log in with a club account.")
+                val clubName = user.clubName?.ifBlank { null } ?: user.name.ifBlank { "Club" }
+
+                val event = buildEvent(state, clubId, clubName).copy(id = id)
 
                 val savedId = withTimeoutOrNull(saveTimeoutMs) {
                     if (action == SaveAction.DRAFT) eventRepository.saveDraft(event)
@@ -149,15 +157,19 @@ class CreateEventViewModel(
                     isOffline = !networkMonitor.isOnline.value,
                     successMessage = if (action == SaveAction.DRAFT) "Draft saved" else "Submitted for approval"
                 )
+            } catch (e: IllegalStateException) {
+                _uiState.update {
+                    it.copy(isSaving = false, saveError = e.message ?: "No club linked to this account")
+                }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isSaving = false, saveError = "Couldn't save the event. Check your connection and try again.")
+                    it.copy(isSaving = false, saveError = e.message ?: "Couldn't save the event. Try again.")
                 }
             }
         }
     }
 
-    private fun buildEvent(state: CreateEventUiState, clubId: String): Event {
+    private fun buildEvent(state: CreateEventUiState, clubId: String, clubName: String): Event {
         val f = state.form
         return Event(
             id = state.editingId,
@@ -165,6 +177,7 @@ class CreateEventViewModel(
             description = f.description.trim(),
             category = f.category,
             clubId = clubId,
+            clubName = clubName,
             location = f.location.trim(),
             startTime = EventValidation.parseDateTime(f.date, f.time) ?: 0L,
             endTime = EventValidation.parseDateTime(f.date, f.endTime) ?: 0L,

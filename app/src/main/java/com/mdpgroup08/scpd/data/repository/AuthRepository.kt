@@ -64,7 +64,8 @@ interface AuthRepository {
 class FirebaseAuthRepository(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
-    private val keystoreHelper: KeystoreHelper = KeystoreHelper()
+    private val keystoreHelper: KeystoreHelper = KeystoreHelper(),
+    private val deviceHelper: DeviceHelper? = null
 ) : AuthRepository {
 
     companion object {
@@ -96,6 +97,9 @@ class FirebaseAuthRepository(
             throw SignInException(SignInError.WRONG_CREDENTIALS) // R6-S1 EX1 generic error
         } catch (e: FirebaseAuthInvalidUserException) {
             handleFailedAttempt(trimmedEmail)
+            if (e.errorCode == "ERROR_USER_DISABLED") {
+                throw SignInException(SignInError.ACCOUNT_DEACTIVATED)
+            }
             throw SignInException(SignInError.WRONG_CREDENTIALS) // R6-S1 EX1 generic error
         } catch (e: FirebaseTooManyRequestsException) {
             throw SignInException(SignInError.TOO_MANY_ATTEMPTS)
@@ -152,6 +156,15 @@ class FirebaseAuthRepository(
 
         val trimmedEmail = email.trim().lowercase()
 
+        // R6-S13 AC1 & EX2: Check if device is registered to another account
+        val deviceId = deviceHelper?.getDeviceId()
+        if (deviceId != null) {
+            val existing = firestore.collection("users").whereEqualTo("deviceId", deviceId).get().await()
+            if (!existing.isEmpty) {
+                throw IllegalStateException("Phone already registered. Contact s-CPD office if you share a phone.")
+            }
+        }
+
         // Create Firebase Auth user
         val authResult = auth.createUserWithEmailAndPassword(trimmedEmail, password).await()
         val uid = authResult.user?.uid ?: throw SignInException(SignInError.UNKNOWN)
@@ -175,6 +188,7 @@ class FirebaseAuthRepository(
             pdpaAccepted = true,
             accountStatus = AccountStatus.PENDING_VERIFICATION.name,
             publicKey = publicKey,
+            deviceId = deviceId,
             currentYear = studyDetails.currentYear,
             degreeName = studyDetails.degreeName.trim(),
             degreeLength = studyDetails.degreeLength,

@@ -1,16 +1,17 @@
 package com.mdpgroup08.scpd.data.repository
 
+import com.mdpgroup08.scpd.data.model.AuditEntry
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
-import com.mdpgroup08.scpd.data.model.AuditEntry
 
 /** In-memory EventRepository for tests and for running the app without Firebase. */
 class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventRepository {
 
     private val store = MutableStateFlow(initial)
+
     /** Audit entries written by approve/reject, so tests can check them. */
     val auditLog = mutableListOf<AuditEntry>()
 
@@ -25,18 +26,17 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     override fun getClubEvents(clubId: String): Flow<List<Event>> =
         store.map { list -> list.filter { it.clubId == clubId } }
 
-    override suspend fun saveDraft(event: Event): String =
-        upsert(event.copy(status = EventStatus.DRAFT, submittedAt = null))
+    override fun getPendingEvents(): Flow<List<Event>> = store.map { list ->
+        list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: it.createdAt }
+    }
 
     override fun newId(): String = "fake_${System.nanoTime()}"
 
+    override suspend fun saveDraft(event: Event): String =
+        upsert(event.copy(status = EventStatus.DRAFT, submittedAt = null))
+
     override suspend fun submit(event: Event): String =
         upsert(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
-
-
-    override fun getPendingEvents(): Flow<List<Event>> = store.map { list ->
-        list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: Long.MAX_VALUE }
-    }
 
     override suspend fun approve(eventId: String, approvedPoints: Int, note: String, adminId: String) =
         decide(eventId, adminId, "EVENT_APPROVED", note) {
@@ -48,6 +48,7 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
             it.copy(status = EventStatus.REJECTED, rejectionReason = reason)
         }
 
+    /** Same rules as the Firebase transaction: only a Pending event can be decided, and an audit entry is written. */
     private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
         val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
         if (event.status != EventStatus.PENDING) throw EventDecisionException.AlreadyDecided
@@ -66,7 +67,7 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     }
 
     private fun upsert(event: Event): String {
-        val id = event.id.ifBlank { "fake_${System.nanoTime()}" }
+        val id = event.id.ifBlank { newId() }
         store.value = store.value.filter { it.id != id } + event.copy(id = id)
         return id
     }
