@@ -1,6 +1,8 @@
 package com.mdpgroup08.scpd.ui.student
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,18 +12,37 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -31,6 +52,9 @@ import com.mdpgroup08.scpd.ui.components.ErrorWithRetry
 import com.mdpgroup08.scpd.ui.components.OfflineBanner
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.Availability
+import com.mdpgroup08.scpd.viewmodel.DateFilter
+import com.mdpgroup08.scpd.viewmodel.EventValidation
+import com.mdpgroup08.scpd.viewmodel.MarketplaceFilters
 import com.mdpgroup08.scpd.viewmodel.MarketplaceItem
 import com.mdpgroup08.scpd.viewmodel.MarketplaceList
 import com.mdpgroup08.scpd.viewmodel.MarketplaceViewModel
@@ -39,7 +63,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Student Marketplace (R2-S1, R2-S9). Shows state only; all rules are in MarketplaceViewModel.
+ * Student Marketplace (R2-S1, R2-S2, R2-S9). Shows state only; all rules are in MarketplaceViewModel.
  * Tapping a card opens the event details (R2-S3).
  */
 @Composable
@@ -48,35 +72,65 @@ fun MarketplaceScreen(
     viewModel: MarketplaceViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val filters = state.filters
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(16.dp))
         Text("Marketplace", style = MaterialTheme.typography.headlineSmall)
-        Text(
-            "Approved events you can book, soonest first.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+        Spacer(Modifier.height(8.dp))
+
+        SearchField(query = filters.query, onQueryChange = viewModel::onQueryChange)
+        Spacer(Modifier.height(8.dp))
+        FilterRow(
+            filters = filters,
+            clubs = state.clubs,
+            onCategory = viewModel::setCategory,
+            onDate = viewModel::setDate,
+            onPoints = viewModel::setMinPoints,
+            onClub = viewModel::setClub,
+            onAvailableOnly = viewModel::setAvailableOnly,
+            onClear = viewModel::clearFilters
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
 
         if (state.isOffline) {
             OfflineBanner("Offline: showing saved data. Booking needs a connection.")
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(8.dp))
         }
 
         when (val list = state.list) {
             MarketplaceList.Loading -> CenteredContent { CircularProgressIndicator() }
             is MarketplaceList.Error -> ErrorWithRetry(list.message, viewModel::load)
-            is MarketplaceList.Loaded ->
-                if (list.items.isEmpty()) {
-                    CenteredContent {
+            is MarketplaceList.Loaded -> when {
+                list.total == 0 -> CenteredContent {
+                    Text(
+                        if (state.isOffline) "No saved events on this phone. Connect to the internet to load events."
+                        else "No upcoming events right now. Check back soon.",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag("marketplace_empty")
+                    )
+                }
+                // R2-S2 AC2: nothing matches, so suggest clearing the filters
+                list.items.isEmpty() -> CenteredContent {
+                    Text(
+                        "No events match your search.",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag("marketplace_no_match")
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = viewModel::clearFilters, modifier = Modifier.testTag("clear_filters")) {
+                        Text("Clear search and filters")
+                    }
+                }
+                else -> {
+                    if (filters.isActive) {
                         Text(
-                            if (state.isOffline) "No saved events on this phone. Connect to the internet to load events."
-                            else "No upcoming events right now. Check back soon.",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.testTag("marketplace_empty")
+                            "${list.items.size} of ${list.total} events",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
-                } else {
                     LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(list.items, key = { it.event.id }) { item ->
                             MarketplaceCard(item, onClick = { onOpenEvent(item.event.id) })
@@ -84,6 +138,121 @@ fun MarketplaceScreen(
                         item { Spacer(Modifier.height(16.dp)) }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Search events, clubs or venues") },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Clear search")
+                }
+            }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
+        modifier = Modifier.fillMaxWidth().testTag("search")
+    )
+}
+
+/** Category, date, points, club and availability filters in one scrollable row (R2-S2 AC1). */
+@Composable
+private fun FilterRow(
+    filters: MarketplaceFilters,
+    clubs: List<String>,
+    onCategory: (String?) -> Unit,
+    onDate: (DateFilter) -> Unit,
+    onPoints: (Int?) -> Unit,
+    onClub: (String?) -> Unit,
+    onAvailableOnly: (Boolean) -> Unit,
+    onClear: () -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        DropdownChip(
+            label = "Category",
+            selectedLabel = filters.category,
+            options = listOf<Pair<String, String?>>("Any category" to null) +
+                    EventValidation.CATEGORIES.map { it to it },
+            onSelect = onCategory,
+            tag = "filter_category"
+        )
+        DropdownChip(
+            label = "Date",
+            selectedLabel = filters.date.takeIf { it != DateFilter.ANY }?.label,
+            options = DateFilter.entries.map { it.label to it },
+            onSelect = onDate,
+            tag = "filter_date"
+        )
+        DropdownChip(
+            label = "Points",
+            selectedLabel = filters.minPoints?.let { "$it+ pts" },
+            options = listOf<Pair<String, Int?>>("Any points" to null) +
+                    MarketplaceFilters.POINTS_OPTIONS.map { "$it+ pts" to it },
+            onSelect = onPoints,
+            tag = "filter_points"
+        )
+        if (clubs.isNotEmpty()) {
+            DropdownChip(
+                label = "Club",
+                selectedLabel = filters.club,
+                options = listOf<Pair<String, String?>>("Any club" to null) + clubs.map { it to it },
+                onSelect = onClub,
+                tag = "filter_club"
+            )
+        }
+        FilterChip(
+            selected = filters.availableOnly,
+            onClick = { onAvailableOnly(!filters.availableOnly) },
+            label = { Text(if (filters.availableOnly) "✓ Available" else "Available") },
+            modifier = Modifier.testTag("filter_available")
+        )
+        if (filters.isActive) {
+            TextButton(onClick = onClear, modifier = Modifier.testTag("filter_clear")) {
+                Text("Clear (${filters.activeCount})")
+            }
+        }
+    }
+}
+
+/** A filter chip that opens a menu of options. */
+@Composable
+private fun <T> DropdownChip(
+    label: String,
+    selectedLabel: String?,
+    options: List<Pair<String, T>>,
+    onSelect: (T) -> Unit,
+    tag: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        FilterChip(
+            selected = selectedLabel != null,
+            onClick = { expanded = true },
+            label = { Text(selectedLabel ?: label) },
+            trailingIcon = { Text("▾") },
+            modifier = Modifier.testTag(tag)
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (text, value) ->
+                DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = { onSelect(value); expanded = false }
+                )
+            }
         }
     }
 }
