@@ -3,7 +3,6 @@ package com.mdpgroup08.scpd.ui.student
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +26,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -87,11 +88,38 @@ fun EventDetailsScreen(
                 is DetailsContent.Loaded -> DetailsBody(
                     content = content,
                     isOffline = state.isOffline,
-                    isBooking = state.isBooking,
-                    onBook = viewModel::book
+                    isWorking = state.isWorking,
+                    onBook = viewModel::book,
+                    onSwap = viewModel::requestSwap
                 )
             }
         }
+    }
+
+    // R2-S7: keep the existing booking, or swap it for this event in one step
+    val loaded = state.content as? DetailsContent.Loaded
+    val clash = loaded?.action as? DetailsAction.Clashes
+    if (state.showSwapConfirm && loaded != null && clash != null) {
+        AlertDialog(
+            onDismissRequest = viewModel::keepExisting,
+            title = { Text("Swap your booking?") },
+            text = {
+                Text(
+                    "You'll give up your place at \"${clash.other.title}\" and book \"${loaded.event.title}\" " +
+                            "instead. You can't hold both because they overlap."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmSwap, modifier = Modifier.testTag("confirm_swap")) {
+                    Text("Swap")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::keepExisting, modifier = Modifier.testTag("keep_existing")) {
+                    Text("Keep my booking")
+                }
+            }
+        )
     }
 }
 
@@ -99,8 +127,9 @@ fun EventDetailsScreen(
 private fun DetailsBody(
     content: DetailsContent.Loaded,
     isOffline: Boolean,
-    isBooking: Boolean,
-    onBook: () -> Unit
+    isWorking: Boolean,
+    onBook: () -> Unit,
+    onSwap: () -> Unit
 ) {
     val event = content.event
     val dateFormat = SimpleDateFormat("EEEE d MMMM, h:mm a", Locale.getDefault())
@@ -140,7 +169,7 @@ private fun DetailsBody(
         }
 
         HorizontalDivider()
-        MainButton(content.action, isOffline, isBooking, onBook)
+        MainButton(content.action, isOffline, isWorking, onBook, onSwap)
     }
 }
 
@@ -154,26 +183,44 @@ private fun DetailRow(label: String, value: String) {
 
 /** R2-S3 AC1: Book, Booked ✓, Join waitlist, Clashes with [event] or Booking closed, plus a line explaining why. */
 @Composable
-private fun MainButton(action: DetailsAction, isOffline: Boolean, isBooking: Boolean, onBook: () -> Unit) {
+private fun MainButton(
+    action: DetailsAction,
+    isOffline: Boolean,
+    isWorking: Boolean,
+    onBook: () -> Unit,
+    onSwap: () -> Unit
+) {
+    // Which tap does something right now, if any
+    val onClick: (() -> Unit)? = when {
+        action == DetailsAction.Book -> onBook
+        action is DetailsAction.Clashes && action.canSwap -> onSwap
+        else -> null
+    }
+
     val (label, note) = when (action) {
         DetailsAction.Book ->
             "Book a place" to if (isOffline) "Booking needs a connection." else "Booking closes 2 hours before the start."
         DetailsAction.Booked -> "Booked ✓" to "You have a place at this event."
         DetailsAction.JoinWaitlist -> "Join waitlist" to "This event is full. The waitlist is coming in the next update."
         is DetailsAction.Clashes ->
-            "Clashes with ${action.other.title}" to "You're already booked on \"${action.other.title}\" at the same time."
+            if (action.canSwap) {
+                "Swap for this event" to "Clashes with \"${action.other.title}\". Keep that booking or swap it for this one."
+            } else {
+                "Clashes with ${action.other.title}" to
+                        "You're booked on \"${action.other.title}\" at the same time, and it can't be swapped now."
+            }
         DetailsAction.BookingClosed -> "Booking closed" to "Booking closes 2 hours before the event starts."
         DetailsAction.Unavailable -> "Not available" to "This event can't be booked."
     }
 
     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-        if (action == DetailsAction.Book) {
+        if (onClick != null) {
             Button(
-                onClick = onBook,
-                enabled = !isOffline && !isBooking,
+                onClick = onClick,
+                enabled = !isOffline && !isWorking,
                 modifier = Modifier.fillMaxWidth().height(52.dp).testTag("main_action")
             ) {
-                if (isBooking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                if (isWorking) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 else Text(label)
             }
         } else {

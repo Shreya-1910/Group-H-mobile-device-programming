@@ -66,6 +66,13 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         }
     }
 
+    /** Used by FakeBookingRepository when a booking is cancelled or swapped. */
+    fun decrementBooked(eventId: String) {
+        store.value = store.value.map {
+            if (it.id == eventId) it.copy(bookedCount = (it.bookedCount - 1).coerceAtLeast(0)) else it
+        }
+    }
+
     private fun upsert(event: Event): String {
         val id = event.id.ifBlank { newId() }
         store.value = store.value.filter { it.id != id } + event.copy(id = id)
