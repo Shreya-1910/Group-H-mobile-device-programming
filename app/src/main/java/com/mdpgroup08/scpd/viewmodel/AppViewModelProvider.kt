@@ -78,6 +78,10 @@ object AppViewModelProvider {
                 c.checkInRepository
             )
         }
+        initializer {
+            val c = scpdApplication().container
+            AdminApprovalViewModel(c.eventRepository, c.authRepository, c.networkMonitor)
+        }
     }
 }
 

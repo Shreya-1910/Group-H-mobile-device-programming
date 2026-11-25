@@ -1,5 +1,6 @@
 package com.mdpgroup08.scpd.data.repository
 
+import com.mdpgroup08.scpd.data.model.AuditEntry
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
 import kotlinx.coroutines.flow.Flow
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.map
 class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventRepository {
 
     private val store = MutableStateFlow(initial)
+
+    /** Audit entries written by approve/reject, so tests can check them. */
+    val auditLog = mutableListOf<AuditEntry>()
 
     override fun getApprovedUpcomingEvents(): Flow<List<Event>> = store.map { list ->
         val now = System.currentTimeMillis()
@@ -22,27 +26,37 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     override fun getClubEvents(clubId: String): Flow<List<Event>> =
         store.map { list -> list.filter { it.clubId == clubId } }
 
-    override fun getPendingEvents(): Flow<List<Event>> =
-        store.map { list -> list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: it.createdAt } }
+    override fun getPendingEvents(): Flow<List<Event>> = store.map { list ->
+        list.filter { it.status == EventStatus.PENDING }.sortedBy { it.submittedAt ?: it.createdAt }
+    }
+
+    override fun newId(): String = "fake_${System.nanoTime()}"
 
     override suspend fun saveDraft(event: Event): String =
         upsert(event.copy(status = EventStatus.DRAFT, submittedAt = null))
 
-    override fun newId(): String = "fake_${System.nanoTime()}"
-
     override suspend fun submit(event: Event): String =
         upsert(event.copy(status = EventStatus.PENDING, submittedAt = System.currentTimeMillis()))
 
-    override suspend fun approveEvent(eventId: String, approvedPoints: Int, reason: String, adminUid: String) {
-        store.value = store.value.map {
-            if (it.id == eventId) it.copy(status = EventStatus.APPROVED, approvedPoints = approvedPoints) else it
+    override suspend fun approve(eventId: String, approvedPoints: Int, note: String, adminId: String) =
+        decide(eventId, adminId, "EVENT_APPROVED", note) {
+            it.copy(status = EventStatus.APPROVED, approvedPoints = approvedPoints)
         }
-    }
 
-    override suspend fun rejectEvent(eventId: String, reason: String, adminUid: String) {
-        store.value = store.value.map {
-            if (it.id == eventId) it.copy(status = EventStatus.REJECTED, rejectionReason = reason) else it
+    override suspend fun reject(eventId: String, reason: String, adminId: String) =
+        decide(eventId, adminId, "EVENT_REJECTED", reason) {
+            it.copy(status = EventStatus.REJECTED, rejectionReason = reason)
         }
+
+    /** Same rules as the Firebase transaction: only a Pending event can be decided, and an audit entry is written. */
+    private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
+        val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
+        if (event.status != EventStatus.PENDING) throw EventDecisionException.AlreadyDecided
+        store.value = store.value.map { if (it.id == eventId) change(it) else it }
+        auditLog += AuditEntry(
+            id = "event_${eventId}_decision", actorId = adminId, action = action,
+            targetId = eventId, reason = reason, timestamp = System.currentTimeMillis()
+        )
     }
 
     /** Used by FakeBookingRepository to keep the booked count in step. */
@@ -53,7 +67,7 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
     }
 
     private fun upsert(event: Event): String {
-        val id = event.id.ifBlank { "fake_${System.nanoTime()}" }
+        val id = event.id.ifBlank { newId() }
         store.value = store.value.filter { it.id != id } + event.copy(id = id)
         return id
     }
@@ -62,7 +76,7 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         private const val HOUR = 60L * 60 * 1000
         private const val DAY = 24 * HOUR
 
-        /** Sample events */
+        /** Five sample events; "Beach Clean-up" is full so the full-event state can be tested. */
         fun sampleEvents(): List<Event> {
             val now = System.currentTimeMillis()
             return listOf(

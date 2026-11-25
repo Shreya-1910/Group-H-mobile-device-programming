@@ -10,12 +10,14 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import com.mdpgroup08.scpd.data.model.AuditEntry
 
 class FirebaseEventRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : EventRepository {
 
     private val events = db.collection("events")
+    private val auditLog = db.collection("auditLog")
 
     private fun Query.snapshotFlow(): Flow<List<Event>> = callbackFlow {
         val reg = addSnapshotListener { snap, err ->
@@ -142,6 +144,52 @@ class FirebaseEventRepository(
     }
 
     override fun newId(): String = events.document().id
+
+    override fun getPendingEvents(): Flow<List<Event>> =
+        events.whereEqualTo("status", EventStatus.PENDING.name)
+            .snapshotFlow()
+            .map { list -> list.sortedBy { it.submittedAt ?: Long.MAX_VALUE } }
+
+    override suspend fun approve(eventId: String, approvedPoints: Int, note: String, adminId: String) =
+        decide(
+            eventId, adminId, "EVENT_APPROVED", note,
+            mapOf("status" to EventStatus.APPROVED.name, "approvedPoints" to approvedPoints)
+        )
+
+    override suspend fun reject(eventId: String, reason: String, adminId: String) =
+        decide(
+            eventId, adminId, "EVENT_REJECTED", reason,
+            mapOf("status" to EventStatus.REJECTED.name, "rejectionReason" to reason)
+        )
+
+    /**
+     * One transaction: check the event is still Pending, update it, and write the audit entry.
+     * The audit entry has a fixed ID so the security rules can require it (R6-S20).
+     */
+    private suspend fun decide(
+        eventId: String, adminId: String, action: String, reason: String, changes: Map<String, Any>
+    ) {
+        val eventRef = events.document(eventId)
+        val auditRef = auditLog.document("event_${eventId}_decision")
+        try {
+            db.runTransaction { tx ->
+                val snap = tx.get(eventRef)
+                if (!snap.exists()) throw EventDecisionException.NotFound
+                if (snap.getString("status") != EventStatus.PENDING.name) throw EventDecisionException.AlreadyDecided
+                tx.update(eventRef, changes)
+                tx.set(
+                    auditRef,
+                    AuditEntry(
+                        actorId = adminId, action = action, targetId = eventId,
+                        reason = reason, timestamp = System.currentTimeMillis()
+                    )
+                )
+            }.await()
+        } catch (e: Exception) {
+            // Firestore may wrap our exception, so unwrap it for the ViewModel
+            throw (e as? EventDecisionException) ?: (e.cause as? EventDecisionException) ?: e
+        }
+    }
 
     private suspend fun write(event: Event): String {
         val doc = if (event.id.isBlank()) events.document() else events.document(event.id)

@@ -52,6 +52,9 @@ interface AuthRepository {
     /** clubId of the signed-in club account, or null. */
     suspend fun currentClubId(): String? = null
 
+    /** uid of the signed-in user, or null if nobody is signed in. Used for audit entries. */
+    suspend fun currentUserId(): String? = null
+
     /** Verifies whether current device key matches student's registered key (R6-S3). */
     suspend fun verifyCheckInDevice(): Boolean
 
@@ -215,6 +218,8 @@ class FirebaseAuthRepository(
         val user = currentUser() ?: return null
         return user.clubId
     }
+
+    override suspend fun currentUserId(): String? = auth.currentUser?.uid
 
     override suspend fun verifyCheckInDevice(): Boolean {
         val user = currentUser() ?: return false

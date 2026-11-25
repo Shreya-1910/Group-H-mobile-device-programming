@@ -2,12 +2,11 @@ package com.mdpgroup08.scpd.viewmodel
 
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
-import com.mdpgroup08.scpd.data.model.StudyDetails
-import com.mdpgroup08.scpd.data.model.User
 import com.mdpgroup08.scpd.data.model.UserRole
 import com.mdpgroup08.scpd.data.network.FakeNetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AuthRepository
 import com.mdpgroup08.scpd.data.repository.EventRepository
+import com.mdpgroup08.scpd.data.repository.FakeAuthRepository
 import com.mdpgroup08.scpd.data.repository.FakeEventRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,23 +29,6 @@ import java.time.ZoneOffset
 @OptIn(ExperimentalCoroutinesApi::class)
 class CreateEventViewModelTest {
 
-    private class FakeClubAuth(private val clubId: String? = "club_robotics") : AuthRepository {
-        override suspend fun signIn(email: String, password: String) = UserRole.CLUB
-        override suspend fun registerStudent(
-            email: String,
-            password: String,
-            name: String,
-            pdpaAccepted: Boolean,
-            studyDetails: StudyDetails
-        ) {}
-        override suspend fun currentUserRole() = UserRole.CLUB
-        override suspend fun currentUser(): User? =
-            if (clubId != null) User(id = "user_1", role = "CLUB", clubId = clubId, name = "Robotics Club", clubName = "Robotics Club") else null
-        override suspend fun currentClubId() = clubId
-        override suspend fun verifyCheckInDevice(): Boolean = true
-        override fun signOut() {}
-    }
-
     /** Saves the event but reports a failure the first time, like a write whose reply was lost. */
     private class LostReplyRepository(private val inner: FakeEventRepository) : EventRepository by inner {
         private var failed = false
@@ -61,6 +43,8 @@ class CreateEventViewModelTest {
     private val now = 1_767_225_600_000L
     private val utc = ZoneOffset.UTC
 
+    private val clubAuth = FakeAuthRepository(UserRole.CLUB, clubId = "club_robotics")
+
     private val valid = EventForm(
         title = "Intro to Arduino", category = "Technology", location = "Lab B2",
         date = "05/11/2026", time = "14:00", endTime = "16:00", capacity = "60", points = "3"
@@ -68,7 +52,7 @@ class CreateEventViewModelTest {
 
     private fun viewModel(
         repo: EventRepository = FakeEventRepository(emptyList()),
-        auth: AuthRepository = FakeClubAuth(),
+        auth: AuthRepository = clubAuth,
         network: FakeNetworkMonitor = FakeNetworkMonitor()
     ) = CreateEventViewModel(repo, auth, network, clock = { now })
 
@@ -198,7 +182,7 @@ class CreateEventViewModelTest {
 
     @Test
     fun `save failure shows an error with retry`() = runTest {
-        val vm = viewModel(auth = FakeClubAuth(clubId = null))
+        val vm = viewModel(auth = FakeAuthRepository(UserRole.CLUB, clubId = null))
         vm.onFormChange(valid)
         vm.saveDraft()
 
