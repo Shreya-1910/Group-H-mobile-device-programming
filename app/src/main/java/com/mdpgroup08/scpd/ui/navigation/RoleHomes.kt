@@ -109,8 +109,9 @@ fun StudentHome(onLogOut: () -> Unit) {
             startDestination = studentTabs.first().route,
             modifier = Modifier.padding(padding)
         ) {
+            // R2-S1: browse approved events. Event details (R2-S3) come in task 5 part 3.
             composable("student_marketplace") {
-                MarketplaceScreen()
+                MarketplaceScreen(onOpenEvent = { /* details screen comes next */ })
             }
 
             composable("student_my_events") {

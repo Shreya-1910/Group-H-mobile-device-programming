@@ -82,6 +82,11 @@ object AppViewModelProvider {
             val c = scpdApplication().container
             AdminApprovalViewModel(c.eventRepository, c.authRepository, c.networkMonitor)
         }
+
+        initializer {
+            val c = scpdApplication().container
+            MarketplaceViewModel(c.eventRepository, c.networkMonitor)
+        }
     }
 }
 
