@@ -30,7 +30,7 @@ object Routes {
 fun AppNavHost(
     navController: NavHostController = rememberNavController(),
     sessionViewModel: SessionViewModel =
-        viewModel(factory = AppViewModelProvider.Factory)
+        viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val isDeactivated by sessionViewModel.isDeactivated.collectAsStateWithLifecycle()
 

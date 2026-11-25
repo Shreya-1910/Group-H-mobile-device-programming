@@ -32,19 +32,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mdpgroup08.scpd.ui.admin.AdminApprovalScreen
 import com.mdpgroup08.scpd.ui.admin.AdminScreen
+import com.mdpgroup08.scpd.ui.admin.ApprovalQueueScreen
+import com.mdpgroup08.scpd.ui.club.CheckInQrScreen
 import com.mdpgroup08.scpd.ui.club.CreateEventScreen
 import com.mdpgroup08.scpd.ui.club.MyEventsScreen
 import com.mdpgroup08.scpd.ui.student.ManualCheckInScreen
+import com.mdpgroup08.scpd.ui.student.MarketplaceScreen
 import com.mdpgroup08.scpd.ui.student.PointsScreen
+import com.mdpgroup08.scpd.ui.student.EventDetailsScreen
 
 /** One bottom-bar tab. */
 data class Tab(
@@ -78,30 +82,227 @@ private val adminTabs = listOf(
 )
 
 /** Student home. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentHome(onLogOut: () -> Unit) {
-
     val tabNav = rememberNavController()
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Student Portal") },
+                actions = {
+                    IconButton(onClick = onLogOut) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Log out"
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
             BottomBar(tabNav, studentTabs)
         }
     ) { padding ->
-
         NavHost(
             tabNav,
             startDestination = studentTabs.first().route,
             modifier = Modifier.padding(padding)
         ) {
-
+            // R2-S1: browse approved events. Event details (R2-S3) come in task 5 part 3.
             composable("student_marketplace") {
-                ComingSoonScreen("Marketplace")
+                MarketplaceScreen(onOpenEvent = { /* details screen comes next */ })
             }
 
             composable("student_my_events") {
                 ComingSoonScreen("My events")
             }
 
-            // R3-S3: Manual six-digit check-in code entry
             composable("student_check_in") {
+                ManualCheckInScreen()
+            }
+
+            composable("student_points") {
+                PointsScreen()
+            }
+
+            composable("student_profile") {
+                ComingSoonScreen("Profile", onLogOut = onLogOut)
+            }
+
+            // R2-S1, R2-S2: browse and search approved events
+            composable("student_marketplace") {
+                MarketplaceScreen(onOpenEvent = { id -> tabNav.navigate("student_event/$id") })
+            }
+
+            // R2-S3: event details with the state-aware main button
+            composable("student_event/{eventId}") {
+                EventDetailsScreen(onBack = { tabNav.popBackStack() })
+            }
+        }
+    }
+}
+
+/** Club home. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ClubHome(onLogOut: () -> Unit) {
+    val tabNav = rememberNavController()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Club Portal") },
+                actions = {
+                    IconButton(onClick = onLogOut) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Log out"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            BottomBar(tabNav, clubTabs)
+        }
+    ) { padding ->
+        NavHost(
+            tabNav,
+            startDestination = clubTabs.first().route,
+            modifier = Modifier.padding(padding)
+        ) {
+            composable("club_my_events") {
+                MyEventsScreen(
+                    onCreateEvent = { tabNav.navigate("club_create_event") },
+                    onEditDraft = { draftId -> tabNav.navigate("club_create_event/$draftId") },
+                    onGenerateQr = { eventId -> tabNav.navigate("club_check_in/$eventId") }
+                )
+            }
+
+            composable("club_create_event") {
+                CreateEventScreen(onSaved = { tabNav.navigate("club_my_events") })
+            }
+
+            composable("club_create_event/{draftId}") { backStackEntry ->
+                val draftId = backStackEntry.arguments?.getString("draftId") ?: ""
+                CreateEventScreen(draftId = draftId, onSaved = { tabNav.navigate("club_my_events") })
+            }
+
+            composable("club_check_in/{eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+                CheckInQrScreen(eventId = eventId, onBack = { tabNav.popBackStack() })
+            }
+
+            composable("club_check_in") {
+                ComingSoonScreen("Check-in")
+            }
+
+            composable("club_attendance") {
+                ComingSoonScreen("Attendance")
+            }
+        }
+    }
+}
+
+/** Admin home. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AdminHome(onLogOut: () -> Unit) {
+    val tabNav = rememberNavController()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Admin Portal") },
+                actions = {
+                    IconButton(onClick = onLogOut) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Log out"
+                        )
+                    }
+                }
+            )
+        },
+        bottomBar = {
+            BottomBar(tabNav, adminTabs)
+        }
+    ) { padding ->
+        NavHost(
+            tabNav,
+            startDestination = adminTabs.first().route,
+            modifier = Modifier.padding(padding)
+        ) {
+            composable("admin_queue") {
+                ApprovalQueueScreen()
+            }
+
+            composable("admin_accounts") {
+                AdminScreen()
+            }
+
+            composable("admin_audit") {
+                ComingSoonScreen("Audit log")
+            }
+        }
+    }
+}
+
+@Composable
+private fun BottomBar(
+    navController: NavHostController,
+    tabs: List<Tab>
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    NavigationBar {
+        tabs.forEach { tab ->
+            val selected = currentDestination?.hierarchy?.any { it.route == tab.route } == true
+            NavigationBarItem(
+                icon = { Icon(tab.icon, contentDescription = tab.label) },
+                label = { Text(tab.label) },
+                selected = selected,
+                onClick = {
+                    navController.navigate(tab.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun ComingSoonScreen(
+    title: String,
+    onLogOut: (() -> Unit)? = null
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(title, style = MaterialTheme.typography.headlineMedium)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Coming soon",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (onLogOut != null) {
+            Spacer(Modifier.height(16.dp))
+            Button(onClick = onLogOut) {
+                Text("Log out")
+            }
+        }
+    }
+}
