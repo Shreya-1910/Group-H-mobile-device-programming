@@ -151,12 +151,14 @@ class AdminApprovalViewModelTest {
 
     @Test
     fun `event that has already started cannot be approved`() = runTest {
+        // According to R1-S8, an event that has already started is filtered out and marked EXPIRED quietly.
+        // So the Admin queue shouldn't even show it, and attempting to find it will fail.
         repo = FakeEventRepository(listOf(pending("late", submittedDaysAgo = 1).copy(startTime = now - 1000)))
         val vm = viewModel()
-        vm.openApprove(vm.event("late"))
-        vm.confirm()
-
-        assertTrue(vm.uiState.value.dialog?.error!!.contains("already started"))
-        assertEquals(EventStatus.PENDING, repo.getEvent("late").first()!!.status)
+        
+        // Ensure that the overdue event is automatically expired and removed from the queue
+        val items = (vm.uiState.value.queue as ApprovalQueue.Loaded).items
+        assertTrue("Overdue event should not be in the queue", items.isEmpty())
+        assertEquals(EventStatus.EXPIRED, repo.getEvent("late").first()!!.status)
     }
 }

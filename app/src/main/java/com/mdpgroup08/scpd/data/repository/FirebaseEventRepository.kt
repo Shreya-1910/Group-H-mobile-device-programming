@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.FieldPath
 
 class FirebaseEventRepository(
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -118,5 +119,30 @@ class FirebaseEventRepository(
         val doc = if (event.id.isBlank()) events.document() else events.document(event.id)
         doc.set(event).await()
         return doc.id
+    }
+
+    override suspend fun cancelEvent(eventId: String, reason: String) {
+        val ref = events.document(eventId)
+        try {
+            db.runTransaction { tx ->
+                val event = tx.get(ref).toObject(Event::class.java) ?: throw EventDecisionException.NotFound
+                if (event.status != EventStatus.APPROVED || System.currentTimeMillis() >= event.startTime) {
+                    throw EventDecisionException.AlreadyDecided
+                }
+                tx.update(ref, mapOf("status" to EventStatus.CANCELLED.name, "cancellationReason" to reason))
+                null
+            }.await()
+        } catch (e: Exception) {
+            // Firestore may wrap our exception, so unwrap it for the ViewModel
+            throw (e as? EventDecisionException) ?: (e.cause as? EventDecisionException) ?: e
+        }
+    }
+
+    override suspend fun getEventsByIds(ids: List<String>): List<Event> {
+        if (ids.isEmpty()) return emptyList()
+        // Firestore's "in" query accepts a limited number of values, so ask in groups of 10
+        return ids.distinct().chunked(10).flatMap { chunk ->
+            events.whereIn(FieldPath.documentId(), chunk).get().await().toObjects(Event::class.java)
+        }
     }
 }

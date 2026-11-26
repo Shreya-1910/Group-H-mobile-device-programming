@@ -209,7 +209,11 @@ class AdminApprovalViewModel(
     /** Best effort: if it fails (e.g. offline), the next load tries again. */
     private fun expireQuietly(eventId: String) {
         viewModelScope.launch {
-            try { eventRepository.expire(eventId) } catch (e: Exception) { }
+            try { 
+                eventRepository.expire(eventId) 
+            } catch (e: Exception) { 
+                android.util.Log.e("ExpireQuietly", "Failed to expire event $eventId", e)
+            }
         }
     }
 

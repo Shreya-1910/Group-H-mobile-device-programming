@@ -49,7 +49,7 @@ class EventExpiryTest {
     @Test
     fun `club sees its unreviewed event as expired`() = runTest {
         val repo = FakeEventRepository(listOf(pending("late", startsIn = -hour)))
-        val vm = MyEventsViewModel(repo, FakeAuthRepository(UserRole.CLUB, clubId = "club_a"))
+        val vm = MyEventsViewModel(repo, FakeAuthRepository(UserRole.CLUB, clubId = "club_a"), FakeNetworkMonitor())
 
         val item = (vm.uiState.value as MyEventsUiState.Success).events.single()
         assertEquals(EventStatus.EXPIRED, item.event.status)

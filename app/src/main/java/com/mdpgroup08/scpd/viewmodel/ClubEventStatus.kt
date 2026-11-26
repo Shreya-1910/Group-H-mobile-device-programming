@@ -9,10 +9,17 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /** One event on the club's My events list, with the note explaining its status. */
+/** One event on the club's My events list, with the note explaining its status. */
 data class ClubEventItem(
     val event: Event,
     val note: String?,
-    val noteIsWarning: Boolean = false
+    val noteIsWarning: Boolean = false,
+    /** R1-S9: approved and not started yet. */
+    val canCancel: Boolean = false,
+    /** R2-S13: e.g. "Booked 18 of 30 · 4 on the waitlist", for approved events only. */
+    val bookingSummary: String? = null,
+    /** R1-S11: rejected, cancelled or expired events can be copied into a new draft. */
+    val canCopy: Boolean = false
 )
 
 /** Review deadline for Pending events: 5 working days after submission (R1-S4). Weekends are skipped; public holidays are not (assumption). */
@@ -51,7 +58,7 @@ object ClubEventStatus {
 
         EventStatus.REJECTED -> ClubEventItem(
             event,
-            "Rejected: ${event.rejectionReason ?: "no reason given"}. Create a new event to fix it and submit again.",
+            "Rejected: ${event.rejectionReason ?: "no reason given"}. Tap Copy to new draft to fix it and submit again.",
             noteIsWarning = true
         )
 

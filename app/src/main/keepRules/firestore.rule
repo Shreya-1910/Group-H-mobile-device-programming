@@ -153,6 +153,7 @@ service cloud.firestore {
           function clubCancels() {
             return isClubOwner(resource.data.clubId)
               && resource.data.status == 'APPROVED'
+              && nowMs() < resource.data.startTime
               && request.resource.data.status == 'CANCELLED'
               && changedKeys().hasOnly(['status', 'cancellationReason'])
               && request.resource.data.cancellationReason is string
@@ -318,7 +319,7 @@ service cloud.firestore {
         // R6-S20: approval decisions are written once by the admin, with the decision; nobody can edit them
         match /auditLog/{docId} {
           allow read: if isAdmin();
-          allow create: if isAdmin() && request.resource.data.actorId == uid();
+          allow create: if (isAdmin() && request.resource.data.actorId == uid()) || isClubOwner(request.resource.data.actorId);
           allow update, delete: if false;
         }
 
