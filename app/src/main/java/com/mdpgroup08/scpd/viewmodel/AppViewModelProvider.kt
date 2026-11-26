@@ -48,7 +48,8 @@ object AppViewModelProvider {
 
             MyEventsViewModel(
                 c.eventRepository,
-                c.authRepository
+                c.authRepository,
+                c.networkMonitor
             )
         }
 

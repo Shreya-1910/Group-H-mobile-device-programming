@@ -119,4 +119,21 @@ class FirebaseEventRepository(
         doc.set(event).await()
         return doc.id
     }
+
+    override suspend fun cancelEvent(eventId: String, reason: String) {
+        val ref = events.document(eventId)
+        try {
+            db.runTransaction { tx ->
+                val event = tx.get(ref).toObject(Event::class.java) ?: throw EventDecisionException.NotFound
+                if (event.status != EventStatus.APPROVED || System.currentTimeMillis() >= event.startTime) {
+                    throw EventDecisionException.AlreadyDecided
+                }
+                tx.update(ref, mapOf("status" to EventStatus.CANCELLED.name, "cancellationReason" to reason))
+                null
+            }.await()
+        } catch (e: Exception) {
+            // Firestore may wrap our exception, so unwrap it for the ViewModel
+            throw (e as? EventDecisionException) ?: (e.cause as? EventDecisionException) ?: e
+        }
+    }
 }

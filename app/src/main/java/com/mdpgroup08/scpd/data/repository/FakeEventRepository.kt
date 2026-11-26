@@ -55,6 +55,14 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         }
     }
 
+    override suspend fun cancelEvent(eventId: String, reason: String) {
+        val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
+        if (event.status != EventStatus.APPROVED || System.currentTimeMillis() >= event.startTime) {
+            throw EventDecisionException.AlreadyDecided
+        }
+        update(eventId) { it.copy(status = EventStatus.CANCELLED, cancellationReason = reason) }
+    }
+
     /** Same rules as the Firebase transaction: only a Pending event can be decided, and an audit entry is written. */
     private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
         val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
