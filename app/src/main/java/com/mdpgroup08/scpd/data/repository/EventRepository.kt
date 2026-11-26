@@ -35,4 +35,7 @@ interface EventRepository {
 
     /** Admin rejects a Pending event with a reason (R1-S5). Same rules as approve. */
     suspend fun reject(eventId: String, reason: String, adminId: String)
+
+    /** R1-S8: a Pending event that has reached its start time becomes EXPIRED. Does nothing otherwise. */
+    suspend fun expire(eventId: String)
 }

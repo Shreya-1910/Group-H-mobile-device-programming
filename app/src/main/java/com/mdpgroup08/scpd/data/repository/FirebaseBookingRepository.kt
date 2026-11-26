@@ -75,7 +75,7 @@ class FirebaseBookingRepository(
                 val fromEvent = tx.get(fromEventRef).toObject(Event::class.java) ?: throw BookingException.EventNotFound
                 val fromBooking = tx.get(fromBookingRef).toObject(Booking::class.java)
                 val toBooking = tx.get(toBookingRef).toObject(Booking::class.java)
-                val next = readNextInLine(tx, fromEvent)
+                val next = nextInLine(fromEvent)
 
                 // 2. Check everything, so a failure changes nothing
                 if (fromBooking?.status != BookingStatus.CONFIRMED) throw BookingException.NotBooked
@@ -106,7 +106,7 @@ class FirebaseBookingRepository(
             db.runTransaction { tx ->
                 val event = tx.get(eventRef).toObject(Event::class.java) ?: throw BookingException.EventNotFound
                 val mine = tx.get(myRef).toObject(Booking::class.java)
-                val next = readNextInLine(tx, event)
+                val next = nextInLine(event)
 
                 if (mine?.status != BookingStatus.CONFIRMED) throw BookingException.NotBooked
 
@@ -178,29 +178,25 @@ class FirebaseBookingRepository(
 
     // ---------- Waitlist promotion (R2-S5 AC2) ----------
 
-    /** The first student in the queue, read before any write. */
-    private data class NextInLine(val studentId: String, val ref: DocumentReference, val alreadyBooked: Boolean)
+    /**
+     * The first student in the queue. Their booking is not read: students may only read their own (R6-S6),
+     * and nobody in a queue ever holds a confirmed booking for that event (booking removes them from it).
+     */
+    private data class NextInLine(val studentId: String, val ref: DocumentReference)
 
-    private fun readNextInLine(tx: Transaction, event: Event): NextInLine? {
+    private fun nextInLine(event: Event): NextInLine? {
         val next = event.waitlist.firstOrNull() ?: return null
-        val ref = bookingRef(event.id, next)
-        val booking = tx.get(ref).toObject(Booking::class.java)
-        return NextInLine(next, ref, booking?.status == BookingStatus.CONFIRMED)
+        return NextInLine(next, bookingRef(event.id, next))
     }
 
     /** A place has been freed: give it to the first student in line, or release it if nobody is waiting. */
     private fun releasePlace(tx: Transaction, eventRef: DocumentReference, eventId: String, next: NextInLine?) {
-        when {
-            next == null -> tx.update(eventRef, "bookedCount", FieldValue.increment(-1))
-            next.alreadyBooked -> tx.update(eventRef, mapOf<String, Any>(
-                "bookedCount" to FieldValue.increment(-1),
-                "waitlist" to FieldValue.arrayRemove(next.studentId)
-            ))
-            else -> {
-                // One student leaves and one joins, so bookedCount stays the same
-                tx.set(next.ref, newBooking(eventId, next.studentId, fromWaitlist = true))
-                tx.update(eventRef, "waitlist", FieldValue.arrayRemove(next.studentId))
-            }
+        if (next == null) {
+            tx.update(eventRef, "bookedCount", FieldValue.increment(-1))
+        } else {
+            // One student leaves and one joins, so bookedCount stays the same
+            tx.set(next.ref, newBooking(eventId, next.studentId, fromWaitlist = true))
+            tx.update(eventRef, "waitlist", FieldValue.arrayRemove(next.studentId))
         }
     }
 
