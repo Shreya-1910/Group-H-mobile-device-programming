@@ -18,6 +18,8 @@ import com.mdpgroup08.scpd.data.repository.FirebaseEventRepository
 import com.mdpgroup08.scpd.data.repository.KeystoreHelper
 import com.mdpgroup08.scpd.data.repository.BookingRepository
 import com.mdpgroup08.scpd.data.repository.FirebaseBookingRepository
+import com.mdpgroup08.scpd.reminders.ReminderScheduler
+import com.mdpgroup08.scpd.reminders.WorkManagerReminderScheduler
 
 /**
  * Shared dependency container providing repositories,
@@ -77,6 +79,10 @@ class AppContainer(context: Context) {
             dao = checkInDao,
             auth = auth
         )
+    }
+
+    val reminderScheduler: ReminderScheduler by lazy {
+        WorkManagerReminderScheduler(context)
     }
 }
 
