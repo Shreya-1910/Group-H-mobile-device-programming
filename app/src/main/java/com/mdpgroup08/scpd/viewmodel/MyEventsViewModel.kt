@@ -139,7 +139,8 @@ class MyEventsViewModel(
     private fun toItem(event: Event, now: Long): ClubEventItem =
         ClubEventStatus.toItem(event).copy(
             canCancel = canCancel(event, now),
-            bookingSummary = if (event.status == EventStatus.APPROVED) bookingSummary(event) else null
+            bookingSummary = if (event.status == EventStatus.APPROVED) bookingSummary(event) else null,
+            canCopy = event.status in CreateEventViewModel.COPYABLE
         )
 
     /** Best effort: if it fails (e.g. offline), the next load tries again. */

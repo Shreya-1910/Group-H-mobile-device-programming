@@ -49,12 +49,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Club "My events" screen (R1-S3, R1-S6, R1-S8, R1-S9, R2-S13). */
+/** Club "My events" screen (R1-S3, R1-S6, R1-S8, R1-S9, R1-S11, R2-S13). */
 @Composable
 fun MyEventsScreen(
     onCreateEvent: () -> Unit = {},
     onEditDraft: (String) -> Unit = {},
     onGenerateQr: (String) -> Unit = {},
+    onCopyEvent: (String) -> Unit = {},
     viewModel: MyEventsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -98,7 +99,8 @@ fun MyEventsScreen(
                                     item = item,
                                     onEdit = { onEditDraft(item.event.id) },
                                     onGenerateQr = { onGenerateQr(item.event.id) },
-                                    onCancel = { viewModel.openCancel(item.event) }
+                                    onCancel = { viewModel.openCancel(item.event) },
+                                    onCopy = { onCopyEvent(item.event.id) }
                                 )
                             }
                         }
@@ -123,7 +125,8 @@ private fun ClubEventCard(
     item: ClubEventItem,
     onEdit: () -> Unit,
     onGenerateQr: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    onCopy: () -> Unit
 ) {
     val event = item.event
     val dateText = if (event.startTime > 0) {
@@ -178,6 +181,12 @@ private fun ClubEventCard(
                 if (item.canCancel) {
                     TextButton(onClick = onCancel, modifier = Modifier.testTag("cancel_event_${event.id}")) {
                         Text("Cancel event", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                // R1-S11: start a new draft from a rejected, cancelled or expired event
+                if (item.canCopy) {
+                    TextButton(onClick = onCopy, modifier = Modifier.testTag("copy_event_${event.id}")) {
+                        Text("Copy to new draft")
                     }
                 }
             }

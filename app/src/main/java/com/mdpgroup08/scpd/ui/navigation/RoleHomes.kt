@@ -208,7 +208,8 @@ fun ClubHome(onLogOut: () -> Unit) {
                 MyEventsScreen(
                     onCreateEvent = { tabNav.navigate("club_create_event") },
                     onEditDraft = { draftId -> tabNav.navigate("club_create_event/$draftId") },
-                    onGenerateQr = { eventId -> tabNav.navigate("club_check_in/$eventId") }
+                    onGenerateQr = { eventId -> tabNav.navigate("club_check_in/$eventId") },
+                    onCopyEvent = { eventId -> tabNav.navigate("club_copy_event/$eventId") }
                 )
             }
 
@@ -219,6 +220,12 @@ fun ClubHome(onLogOut: () -> Unit) {
             composable("club_create_event/{draftId}") { backStackEntry ->
                 val draftId = backStackEntry.arguments?.getString("draftId") ?: ""
                 CreateEventScreen(draftId = draftId, onSaved = { tabNav.navigate("club_my_events") })
+            }
+
+            // R1-S11: a new draft filled from a rejected, cancelled or expired event
+            composable("club_copy_event/{eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+                CreateEventScreen(copyFromId = eventId, onSaved = { tabNav.navigate("club_my_events") })
             }
 
             composable("club_check_in/{eventId}") { backStackEntry ->
