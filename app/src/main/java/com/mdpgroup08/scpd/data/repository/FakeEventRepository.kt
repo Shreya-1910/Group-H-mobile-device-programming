@@ -99,6 +99,9 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         return id
     }
 
+    override suspend fun getEventsByIds(ids: List<String>): List<Event> =
+        store.value.filter { it.id in ids }
+
     companion object {
         private const val HOUR = 60L * 60 * 1000
         private const val DAY = 24 * HOUR

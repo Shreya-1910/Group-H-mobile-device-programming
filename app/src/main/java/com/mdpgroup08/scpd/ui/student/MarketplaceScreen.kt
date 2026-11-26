@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +23,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -44,6 +47,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,24 +58,28 @@ import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.Availability
 import com.mdpgroup08.scpd.viewmodel.DateFilter
 import com.mdpgroup08.scpd.viewmodel.EventValidation
+import com.mdpgroup08.scpd.viewmodel.ForYouViewModel
 import com.mdpgroup08.scpd.viewmodel.MarketplaceFilters
 import com.mdpgroup08.scpd.viewmodel.MarketplaceItem
 import com.mdpgroup08.scpd.viewmodel.MarketplaceList
 import com.mdpgroup08.scpd.viewmodel.MarketplaceViewModel
+import com.mdpgroup08.scpd.viewmodel.Recommendation
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Student Marketplace (R2-S1, R2-S2, R2-S9). Shows state only; all rules are in MarketplaceViewModel.
+ * Student Marketplace (R2-S1, R2-S2, R2-S9, R2-S11). Shows state only; all rules are in the ViewModels.
  * Tapping a card opens the event details (R2-S3).
  */
 @Composable
 fun MarketplaceScreen(
     onOpenEvent: (String) -> Unit = {},
-    viewModel: MarketplaceViewModel = viewModel(factory = AppViewModelProvider.Factory)
+    viewModel: MarketplaceViewModel = viewModel(factory = AppViewModelProvider.Factory),
+    forYouViewModel: ForYouViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val recommendations by forYouViewModel.recommendations.collectAsStateWithLifecycle()
     val filters = state.filters
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -122,23 +130,74 @@ fun MarketplaceScreen(
                         Text("Clear search and filters")
                     }
                 }
-                else -> {
-                    if (filters.isActive) {
-                        Text(
-                            "${list.items.size} of ${list.total} events",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        items(list.items, key = { it.event.id }) { item ->
-                            MarketplaceCard(item, onClick = { onOpenEvent(item.event.id) })
+                else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // R2-S11: shown only when the student isn't searching, so it doesn't crowd the results
+                    if (!filters.isActive && recommendations.isNotEmpty()) {
+                        item(key = "for_you") { ForYouRow(recommendations, onOpenEvent) }
+                        item(key = "all_title") {
+                            Text("All events", style = MaterialTheme.typography.titleMedium)
                         }
-                        item { Spacer(Modifier.height(16.dp)) }
                     }
+                    if (filters.isActive) {
+                        item(key = "count") {
+                            Text(
+                                "${list.items.size} of ${list.total} events",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    items(list.items, key = { it.event.id }) { item ->
+                        MarketplaceCard(item, onClick = { onOpenEvent(item.event.id) })
+                    }
+                    item(key = "bottom_space") { Spacer(Modifier.height(16.dp)) }
                 }
             }
+        }
+    }
+}
+
+/** R2-S11: up to 5 picks, each saying why it was chosen. */
+@Composable
+private fun ForYouRow(recommendations: List<Recommendation>, onOpenEvent: (String) -> Unit) {
+    Column(Modifier.testTag("for_you")) {
+        Text("For you", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(recommendations, key = { "rec_${it.item.event.id}" }) { rec ->
+                RecommendationCard(rec, onClick = { onOpenEvent(rec.item.event.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecommendationCard(rec: Recommendation, onClick: () -> Unit) {
+    val event = rec.item.event
+    val dateFormat = SimpleDateFormat("EEE d MMM, h:mm a", Locale.getDefault())
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = Modifier.width(240.dp).testTag("rec_${event.id}")
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                event.title,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(dateFormat.format(Date(event.startTime)), style = MaterialTheme.typography.bodySmall)
+            Text("★ ${rec.item.points} pts • ${rec.item.placesLeft} places left", style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                rec.reason,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

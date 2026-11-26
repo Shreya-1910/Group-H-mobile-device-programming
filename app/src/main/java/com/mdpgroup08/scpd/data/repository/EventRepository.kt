@@ -44,4 +44,6 @@ interface EventRepository {
      * Throws EventDecisionException.AlreadyDecided if it is no longer approved or has started.
      */
     suspend fun cancelEvent(eventId: String, reason: String)
+    /** Events by ID, e.g. a student's past bookings for recommendations (R2-S11). Missing IDs are skipped. */
+    suspend fun getEventsByIds(ids: List<String>): List<Event>
 }
