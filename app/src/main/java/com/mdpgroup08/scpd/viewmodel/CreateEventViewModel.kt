@@ -22,6 +22,8 @@ import java.time.format.DateTimeFormatter
 /** Which action the user last asked for, so Retry can repeat it. */
 enum class SaveAction { DRAFT, SUBMIT }
 
+/** Where a copied event came from, shown as a banner so the club sees what to fix (R1-S11). */
+data class CopiedFrom(val eventId: String, val title: String, val reason: String?)
 data class CreateEventUiState(
     val form: EventForm = EventForm(),
     val errors: EventFormErrors = EventFormErrors(),
@@ -29,6 +31,8 @@ data class CreateEventUiState(
     val editingId: String = "",
     /** Reserved ID for a new event, so a retry uses the same document. */
     val savingId: String = "",
+    /** Set when the form was filled from a rejected, cancelled or expired event (R1-S11). */
+    val copiedFrom: CopiedFrom? = null,
     val editingCreatedAt: Long = 0L,
     val isSaving: Boolean = false,
     val isOffline: Boolean = false,
@@ -84,6 +88,44 @@ class CreateEventViewModel(
                         date = if (event.startTime > 0) start.format(fmtDate) else "",
                         time = if (event.startTime > 0) start.format(fmtTime) else "",
                         endTime = if (event.endTime > 0) end.format(fmtTime) else "",
+                        capacity = event.capacity.toString(),
+                        points = event.requestedPoints.toString()
+                    )
+                )
+            }
+        }
+    }
+
+    /**
+     * R1-S11: start a NEW draft filled from a rejected, cancelled or expired event.
+     * The original is left unchanged. A date that has already passed is cleared, so a new one must be chosen.
+     */
+    fun loadCopy(eventId: String) {
+        if (eventId.isBlank() || _uiState.value.copiedFrom?.eventId == eventId) return
+        viewModelScope.launch {
+            val event = eventRepository.getEvent(eventId).first() ?: return@launch
+            if (event.status !in COPYABLE) return@launch
+
+            val fmtDate = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+            val fmtTime = DateTimeFormatter.ofPattern("HH:mm")
+            val start = Instant.ofEpochMilli(event.startTime).atZone(ZoneId.systemDefault())
+            val end = Instant.ofEpochMilli(event.endTime).atZone(ZoneId.systemDefault())
+            val keepDate = event.startTime > clock()
+
+            _uiState.update {
+                it.copy(
+                    editingId = "",          // a new event, not an edit
+                    editingCreatedAt = 0L,
+                    savingId = "",
+                    copiedFrom = CopiedFrom(event.id, event.title, event.rejectionReason ?: event.cancellationReason),
+                    form = EventForm(
+                        title = event.title,
+                        description = event.description,
+                        category = event.category,
+                        location = event.location,
+                        date = if (keepDate) start.format(fmtDate) else "",
+                        time = if (keepDate) start.format(fmtTime) else "",
+                        endTime = if (keepDate) end.format(fmtTime) else "",
                         capacity = event.capacity.toString(),
                         points = event.requestedPoints.toString()
                     )
@@ -191,5 +233,7 @@ class CreateEventViewModel(
         const val SAVE_TIMEOUT_MS = 15_000L
         const val OFFLINE_MESSAGE = "You're offline. Connect to the internet to save or submit. Your form is kept."
         const val TIMEOUT_MESSAGE = "The server is taking too long to respond. Tap Retry; your event won't be duplicated."
+        /** Events that can be copied into a new draft (R1-S11). */
+        val COPYABLE = setOf(EventStatus.REJECTED, EventStatus.CANCELLED, EventStatus.EXPIRED)
     }
 }

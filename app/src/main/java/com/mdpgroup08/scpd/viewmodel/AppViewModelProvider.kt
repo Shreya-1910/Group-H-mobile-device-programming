@@ -48,7 +48,8 @@ object AppViewModelProvider {
 
             MyEventsViewModel(
                 c.eventRepository,
-                c.authRepository
+                c.authRepository,
+                c.networkMonitor
             )
         }
 
@@ -102,6 +103,16 @@ object AppViewModelProvider {
         initializer {
             val c = scpdApplication().container
             StudentRemindersViewModel(c.bookingRepository, c.eventRepository, c.reminderScheduler)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            StudentEventsViewModel(c.bookingRepository, c.eventRepository, c.networkMonitor)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            ForYouViewModel(c.eventRepository, c.bookingRepository)
         }
     }
 }

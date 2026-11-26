@@ -153,6 +153,7 @@ service cloud.firestore {
           function clubCancels() {
             return isClubOwner(resource.data.clubId)
               && resource.data.status == 'APPROVED'
+              && nowMs() < resource.data.startTime
               && request.resource.data.status == 'CANCELLED'
               && changedKeys().hasOnly(['status', 'cancellationReason'])
               && request.resource.data.cancellationReason is string

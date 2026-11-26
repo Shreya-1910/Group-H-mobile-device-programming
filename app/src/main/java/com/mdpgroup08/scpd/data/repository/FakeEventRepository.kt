@@ -55,6 +55,14 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         }
     }
 
+    override suspend fun cancelEvent(eventId: String, reason: String) {
+        val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
+        if (event.status != EventStatus.APPROVED || System.currentTimeMillis() >= event.startTime) {
+            throw EventDecisionException.AlreadyDecided
+        }
+        update(eventId) { it.copy(status = EventStatus.CANCELLED, cancellationReason = reason) }
+    }
+
     /** Same rules as the Firebase transaction: only a Pending event can be decided, and an audit entry is written. */
     private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
         val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound
@@ -90,6 +98,9 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
         store.value = store.value.filter { it.id != id } + event.copy(id = id)
         return id
     }
+
+    override suspend fun getEventsByIds(ids: List<String>): List<Event> =
+        store.value.filter { it.id in ids }
 
     companion object {
         private const val HOUR = 60L * 60 * 1000

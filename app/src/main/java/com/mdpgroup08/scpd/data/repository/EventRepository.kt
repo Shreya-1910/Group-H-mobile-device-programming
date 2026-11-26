@@ -38,4 +38,12 @@ interface EventRepository {
 
     /** R1-S8: a Pending event that has reached its start time becomes EXPIRED. Does nothing otherwise. */
     suspend fun expire(eventId: String)
+
+    /**
+     * R1-S9: the club cancels an approved event that hasn't started, with a reason shown to students.
+     * Throws EventDecisionException.AlreadyDecided if it is no longer approved or has started.
+     */
+    suspend fun cancelEvent(eventId: String, reason: String)
+    /** Events by ID, e.g. a student's past bookings for recommendations (R2-S11). Missing IDs are skipped. */
+    suspend fun getEventsByIds(ids: List<String>): List<Event>
 }
