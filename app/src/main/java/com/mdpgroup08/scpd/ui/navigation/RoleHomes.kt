@@ -62,6 +62,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.StudentRemindersViewModel
+import com.mdpgroup08.scpd.ui.student.StudentEventsScreen
 
 /** One bottom-bar tab. */
 data class Tab(
@@ -143,8 +144,12 @@ fun StudentHome(onLogOut: () -> Unit) {
                 MarketplaceScreen(onOpenEvent = { /* details screen comes next */ })
             }
 
+            // R4-S10: the student's bookings and waitlists, also offline
             composable("student_my_events") {
-                ComingSoonScreen("My events")
+                StudentEventsScreen(
+                    onOpenEvent = { id -> tabNav.navigate("student_event/$id") },
+                    onBrowse = { tabNav.navigate("student_marketplace") { launchSingleTop = true } }
+                )
             }
 
             // R3-S2, R3-S3, R3-S4: check in with the organiser's 6-digit code
@@ -206,7 +211,8 @@ fun ClubHome(onLogOut: () -> Unit) {
                 MyEventsScreen(
                     onCreateEvent = { tabNav.navigate("club_create_event") },
                     onEditDraft = { draftId -> tabNav.navigate("club_create_event/$draftId") },
-                    onGenerateQr = { eventId -> tabNav.navigate("club_check_in/$eventId") }
+                    onGenerateQr = { eventId -> tabNav.navigate("club_check_in/$eventId") },
+                    onCopyEvent = { eventId -> tabNav.navigate("club_copy_event/$eventId") }
                 )
             }
 
@@ -217,6 +223,12 @@ fun ClubHome(onLogOut: () -> Unit) {
             composable("club_create_event/{draftId}") { backStackEntry ->
                 val draftId = backStackEntry.arguments?.getString("draftId") ?: ""
                 CreateEventScreen(draftId = draftId, onSaved = { tabNav.navigate("club_my_events") })
+            }
+
+            // R1-S11: a new draft filled from a rejected, cancelled or expired event
+            composable("club_copy_event/{eventId}") { backStackEntry ->
+                val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
+                CreateEventScreen(copyFromId = eventId, onSaved = { tabNav.navigate("club_my_events") })
             }
 
             // R3-S1, R4-S23: rotating signed code for one event (eventId read by ShowCodeViewModel)

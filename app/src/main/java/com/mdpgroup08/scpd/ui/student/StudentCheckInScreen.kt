@@ -1,6 +1,11 @@
 package com.mdpgroup08.scpd.ui.student
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,16 +30,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mdpgroup08.scpd.data.model.AttendanceStatus
 import com.mdpgroup08.scpd.ui.components.CenteredContent
 import com.mdpgroup08.scpd.ui.components.ErrorWithRetry
 import com.mdpgroup08.scpd.ui.components.OfflineBanner
+import com.mdpgroup08.scpd.ui.components.QrScanner
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.StudentCheckInUiState
 import com.mdpgroup08.scpd.viewmodel.StudentCheckInViewModel
@@ -97,6 +107,19 @@ private fun EventPicker(state: StudentCheckInUiState, time: SimpleDateFormat, vi
 private fun CodeEntry(state: StudentCheckInUiState, time: SimpleDateFormat, viewModel: StudentCheckInViewModel) {
     val event = state.selected ?: return
     val checkIn = state.checkIn
+    val context = LocalContext.current
+    // R3-S2: ask for the camera only when the student taps Scan
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) viewModel.startScan()
+        else viewModel.cameraUnavailable("Camera permission is needed to scan. You can type the 6-digit code instead.")
+    }
+    val openScanner = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+            viewModel.startScan()
+        } else {
+            cameraPermission.launch(Manifest.permission.CAMERA)
+        }
+    }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -150,8 +173,26 @@ private fun CodeEntry(state: StudentCheckInUiState, time: SimpleDateFormat, view
             Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("checkInError"))
         }
 
-        if (checkIn?.status != AttendanceStatus.VERIFIED) {
-            Text("Type the 6-digit code shown on the organiser's screen.")
+        if (state.scanning) {
+            Text("Point the camera at the QR code on the organiser's screen.")
+            QrScanner(
+                onScanned = viewModel::onQrScanned,
+                onError = viewModel::cameraUnavailable,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(MaterialTheme.shapes.medium).testTag("qrScanner")
+            )
+            OutlinedButton(
+                onClick = viewModel::stopScan,
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) { Text("Cancel scan") }
+        } else if (checkIn?.status != AttendanceStatus.VERIFIED && !state.checking) {
+            Button(
+                onClick = openScanner,
+                modifier = Modifier.fillMaxWidth().height(48.dp).testTag("scanButton")
+            ) { Text("Scan QR code") }
+        }
+
+        if (!state.scanning && checkIn?.status != AttendanceStatus.VERIFIED) {
+            Text("Or type the 6-digit code shown on the organiser's screen.")
             OutlinedTextField(
                 value = state.code,
                 onValueChange = viewModel::onCodeChange,

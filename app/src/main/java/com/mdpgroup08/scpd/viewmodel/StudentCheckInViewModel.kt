@@ -46,7 +46,9 @@ data class StudentCheckInUiState(
     /** Something went wrong sending or loading the check-in. */
     val error: String? = null,
     /** True from tapping Check in until the answer for that code comes back. */
-    val checking: Boolean = false
+    val checking: Boolean = false,
+    /** R3-S2: the camera is open, looking for the organiser's QR code. */
+    val scanning: Boolean = false
 )
 
 /**
@@ -107,7 +109,9 @@ class StudentCheckInViewModel(
     }
 
     fun select(event: Event) {
-        _uiState.update { it.copy(selected = event, code = "", formatError = null, checkIn = null, slowToConfirm = false) }
+        _uiState.update {
+            it.copy(selected = event, code = "", formatError = null, checkIn = null, slowToConfirm = false, scanning = false, error = null)
+        }
         watchJob?.cancel()
         watchJob = viewModelScope.launch {
             val me = authRepository.currentUserId() ?: return@launch
@@ -134,7 +138,7 @@ class StudentCheckInViewModel(
     }
 
     fun back() {
-        _uiState.update { it.copy(checking = false, error = null) }
+        _uiState.update { it.copy(checking = false, scanning = false, error = null) }
         watchJob?.cancel()
         slowJob?.cancel()
         _uiState.update { it.copy(selected = null, checkIn = null, code = "", formatError = null) }
@@ -156,7 +160,53 @@ class StudentCheckInViewModel(
             return
         }
         if (state.checkIn?.status == AttendanceStatus.VERIFIED) return
+        send(event, AttendanceMethod.CODE, sixDigits = state.code)
+    }
 
+    /** R3-S2: open the camera. The screen asks for the camera permission first. */
+    fun startScan() {
+        val state = _uiState.value
+        if (state.selected == null || state.checking) return
+        if (state.checkIn?.status == AttendanceStatus.VERIFIED) return
+        _uiState.update { it.copy(scanning = true, error = null, formatError = null) }
+    }
+
+    fun stopScan() {
+        _uiState.update { it.copy(scanning = false) }
+    }
+
+    fun cameraUnavailable(message: String) {
+        _uiState.update { it.copy(scanning = false, error = message) }
+    }
+
+    /**
+     * R3-S2: a QR code was read. It is sent and checked by the club like a typed code;
+     * the phone only checks that it looks like an s-CPD code for this event (R4-S6 EX1).
+     */
+    fun onQrScanned(text: String) {
+        val state = _uiState.value
+        val event = state.selected ?: return
+        if (!state.scanning) return
+        _uiState.update { it.copy(scanning = false) }
+        val qr = CheckInCodes.parseQr(text)
+        when {
+            qr == null -> _uiState.update {
+                it.copy(error = "This isn't an s-CPD check-in code. Scan the QR code on the organiser's screen.")
+            }
+            qr.eventId != event.id -> _uiState.update {
+                it.copy(error = "This QR code is for a different event. Scan the code for ${event.title}.")
+            }
+            else -> send(event, AttendanceMethod.QR, qrCounter = qr.counter, qrSignature = qr.signature)
+        }
+    }
+
+    private fun send(
+        event: Event,
+        method: AttendanceMethod,
+        sixDigits: String? = null,
+        qrCounter: Long? = null,
+        qrSignature: String? = null
+    ) {
         lastSubmittedAt = clock()
         _uiState.update { it.copy(checking = true, slowToConfirm = false, error = null) }
         viewModelScope.launch {
@@ -173,8 +223,10 @@ class StudentCheckInViewModel(
                     studentId = uid,
                     studentName = name?.ifBlank { null } ?: "Student",
                     deviceId = deviceId(),
-                    method = AttendanceMethod.CODE,
-                    sixDigits = state.code,
+                    method = method,
+                    sixDigits = sixDigits,
+                    qrCounter = qrCounter,
+                    qrSignature = qrSignature,
                     online = networkMonitor.isOnline.value,
                     submittedAt = lastSubmittedAt
                 ),
