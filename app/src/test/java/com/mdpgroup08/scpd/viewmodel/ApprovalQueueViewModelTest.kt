@@ -31,6 +31,7 @@ class ApprovalQueueViewModelTest {
         override suspend fun currentUser(): User = User(id = "admin_123", role = "ADMIN")
         override suspend fun registerStudent(email: String, password: String, name: String, pdpaAccepted: Boolean, studyDetails: com.mdpgroup08.scpd.data.model.StudyDetails) {}
         override suspend fun verifyCheckInDevice(): Boolean = true
+        override suspend fun sendPasswordResetEmail(email: String) {}
         override fun signOut() {}
     }
 

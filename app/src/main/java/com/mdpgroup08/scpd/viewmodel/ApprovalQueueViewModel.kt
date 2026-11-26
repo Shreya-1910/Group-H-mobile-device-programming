@@ -98,7 +98,7 @@ class ApprovalQueueViewModel(
                 eventRepository.approve(
                     eventId = event.id,
                     approvedPoints = points,
-                    note = state.approveReasonInput.trim(),
+                    note = state.approveReasonInput.ifBlank { "Approved" },
                     adminId = adminUid
                 )
                 _uiState.update {

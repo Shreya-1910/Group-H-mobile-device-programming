@@ -22,10 +22,16 @@ data class LoginUiState(
     val errorMessage: String? = null,
     /** Set when sign-in succeeds; the screen then moves to that role's tabs. */
     val signedInRole: UserRole? = null,
+    val forgotPasswordEmail: String = "",
+    val showForgotDialog: Boolean = false,
+    val forgotMessage: String? = null
 ) {
     /** The Log in button only works when both fields are filled and nothing is loading. */
     val canSubmit: Boolean
         get() = email.isNotBlank() && password.isNotBlank() && !isLoading
+    
+    val canResetPassword: Boolean
+        get() = forgotPasswordEmail.isNotBlank() && !isLoading
 }
 
 
@@ -50,6 +56,15 @@ class LoginViewModel(
     fun onPasswordChange(value: String) =
         _uiState.update { it.copy(password = value, errorMessage = null) }
 
+    fun onForgotPasswordEmailChange(value: String) =
+        _uiState.update { it.copy(forgotPasswordEmail = value, forgotMessage = null) }
+
+    fun showForgotPasswordDialog() =
+        _uiState.update { it.copy(showForgotDialog = true, forgotPasswordEmail = it.email, forgotMessage = null) }
+
+    fun dismissForgotPasswordDialog() =
+        _uiState.update { it.copy(showForgotDialog = false, forgotMessage = null) }
+
     fun signIn() {
         val state = _uiState.value
         if (!state.canSubmit) return
@@ -63,6 +78,23 @@ class LoginViewModel(
                 _uiState.update { it.copy(isLoading = false, errorMessage = messageFor(e.error)) }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = messageFor(SignInError.UNKNOWN)) }
+            }
+        }
+    }
+
+    fun resetPassword() {
+        val state = _uiState.value
+        if (!state.canResetPassword) return
+        
+        _uiState.update { it.copy(isLoading = true, forgotMessage = null) }
+        viewModelScope.launch {
+            authRepository.sendPasswordResetEmail(state.forgotPasswordEmail)
+            _uiState.update { 
+                it.copy(
+                    isLoading = false,
+                    showForgotDialog = false,
+                    forgotMessage = "If the email is registered, a password reset link has been sent (R6-S3 AC1/AC2)."
+                ) 
             }
         }
     }

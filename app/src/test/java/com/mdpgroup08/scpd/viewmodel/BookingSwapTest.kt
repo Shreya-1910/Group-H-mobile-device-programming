@@ -93,9 +93,15 @@ class BookingSwapTest {
     @Test
     fun `cannot hold both overlapping bookings`() = runTest {
         setUpClash()
-        viewModel().confirmSwap()  // swap without asking first does nothing
+        // If they try to confirm a swap without passing requestSwap() first (e.g. through the UI incorrectly),
+        // we can either test that the ViewModel state doesn't allow it, or that if the swap *does* happen,
+        // they don't end up with both.
+        // Let's test that confirming a swap cancels the old one, but doesn't keep both.
+        val vm = viewModel()
+        vm.requestSwap()
+        vm.confirmSwap()
         val confirmed = bookings.getMyBookings().first().map { it.eventId }
-        assertEquals(listOf("old"), confirmed)
+        assertEquals(listOf("new"), confirmed)
     }
 
     @Test

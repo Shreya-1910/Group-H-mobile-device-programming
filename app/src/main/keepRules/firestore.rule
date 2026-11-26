@@ -76,7 +76,6 @@ service cloud.firestore {
 
     match /users/{userId} {
 
-      // Users can read their own document; Admins can read all users
       // Allow unrestricted read for device ID uniqueness checks during registration
       allow read: if true;
 
@@ -98,7 +97,7 @@ service cloud.firestore {
 
     match /events/{eventId} {
 
-      // Signed-in users can read all events (Marketplace filters APPROVED, Club screen filters clubId)
+      // Signed-in users can read all events (Marketplace filters APPROVED, Club screen filters by clubId)
       allow read: if isSignedIn();
 
       // Clubs can create their own events in DRAFT or PENDING status
@@ -119,16 +118,18 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
 
-      allow read: if isSignedIn()
-        && (resource.data.studentId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn();
 
       // Students can create bookings for themselves
-      allow create: if isStudent()
+      allow create: if isSignedIn()
         && request.resource.data.keys().hasAll(['studentId'])
         && request.resource.data.studentId == request.auth.uid;
 
       // Admins can update bookings
-      allow update: if isAdmin();
+      allow update: if isAdmin() || isSignedIn();
+
+      // Allow students to cancel their own bookings (delete)
+      allow delete: if isSignedIn() && resource.data.studentId == request.auth.uid;
     }
 
     // ==================================
@@ -149,5 +150,32 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ==================================
+    // 5. SECURE ATTENDANCE (Member 2)
+    // ==================================
+
+    match /eventSecrets/{eventId} {
+
+      function ownsEvent() {
+        return isClubOwner(
+          get(/databases/$(database)/documents/events/$(eventId)).data.clubId
+        );
+      }
+
+      allow read: if ownsEvent();
+      allow create: if ownsEvent()
+        && request.resource.data.clubId == userData().get('clubId', '');
+      allow update, delete: if false;
+    }
+
+    match /codeDisplays/{displayId} {
+
+      allow read: if isAdmin() || isClubOwner(resource.data.clubId);
+      allow create: if isClubOwner(request.resource.data.clubId)
+        && request.resource.data.organiserId == request.auth.uid;
+      allow update: if isClubOwner(resource.data.clubId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastCounter', 'endedAt']);
+      allow delete: if false;
+    }
   }
 }

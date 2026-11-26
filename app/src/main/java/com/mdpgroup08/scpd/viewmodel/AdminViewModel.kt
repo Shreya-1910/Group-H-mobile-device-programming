@@ -18,6 +18,7 @@ data class AdminUiState(
     val targetId: String = "",
     val reason: String = "",
     val newEndYearInput: String = "2026",
+    val newOrganiserEmailInput: String = "",
     val isLoading: Boolean = false,
     val statusMessage: String? = null,
     val errorMessage: String? = null
@@ -44,6 +45,7 @@ class AdminViewModel(
     fun onTargetIdChange(value: String) = _uiState.update { it.copy(targetId = value, errorMessage = null) }
     fun onReasonChange(value: String) = _uiState.update { it.copy(reason = value, errorMessage = null) }
     fun onNewEndYearChange(value: String) = _uiState.update { it.copy(newEndYearInput = value, errorMessage = null) }
+    fun onNewOrganiserEmailChange(value: String) = _uiState.update { it.copy(newOrganiserEmailInput = value, errorMessage = null) }
 
     fun verify2Fa() {
         val passcode = _uiState.value.passcode2Fa.trim()
@@ -73,6 +75,18 @@ class AdminViewModel(
         executeAdminAction { adminUid, targetId, reason ->
             adminRepository.releaseStudentPhone(adminUid, targetId, reason, verified2Step = true)
             "Device key released for account $targetId."
+        }
+    }
+
+    fun replaceClubOrganiser() {
+        val newEmail = _uiState.value.newOrganiserEmailInput.trim()
+        if (newEmail.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "New organiser email is required") }
+            return
+        }
+        executeAdminAction { adminUid, targetId, reason ->
+            adminRepository.replaceClubOrganiser(adminUid, targetId, newEmail, reason, verified2Step = true)
+            "Club organiser replaced with $newEmail."
         }
     }
 

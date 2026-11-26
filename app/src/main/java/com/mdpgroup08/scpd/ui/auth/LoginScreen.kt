@@ -72,7 +72,11 @@ fun LoginScreen(
             onEmailChange = viewModel::onEmailChange,
             onPasswordChange = viewModel::onPasswordChange,
             onLogin = viewModel::signIn,
-            onNavigateToRegister = onNavigateToRegister
+            onNavigateToRegister = onNavigateToRegister,
+            onShowForgotDialog = viewModel::showForgotPasswordDialog,
+            onDismissForgotDialog = viewModel::dismissForgotPasswordDialog,
+            onForgotEmailChange = viewModel::onForgotPasswordEmailChange,
+            onResetPassword = viewModel::resetPassword
         )
     }
 }
@@ -85,7 +89,11 @@ fun LoginContent(
     onPasswordChange: (String) -> Unit,
     onLogin: () -> Unit,
     onNavigateToRegister: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowForgotDialog: () -> Unit = {},
+    onDismissForgotDialog: () -> Unit = {},
+    onForgotEmailChange: (String) -> Unit = {},
+    onResetPassword: () -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -154,9 +162,57 @@ fun LoginContent(
         }
 
         Spacer(Modifier.height(8.dp))
+        TextButton(onClick = onShowForgotDialog) {
+            Text("Forgot password?")
+        }
         TextButton(onClick = onNavigateToRegister) {
             Text("Don't have an account? Register")
         }
+
+        if (state.forgotMessage != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                state.forgotMessage,
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+            )
+        }
+    }
+
+    if (state.showForgotDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = onDismissForgotDialog,
+            title = { Text("Reset Password") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Enter your registered email to receive a reset link.")
+                    OutlinedTextField(
+                        value = state.forgotPasswordEmail,
+                        onValueChange = onForgotEmailChange,
+                        label = { Text("Email") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = onResetPassword,
+                    enabled = state.canResetPassword
+                ) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text("Send Reset Link")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismissForgotDialog) { Text("Cancel") }
+            }
+        )
     }
 }
 
@@ -165,6 +221,7 @@ fun LoginContent(
 private fun LoginPreview() {
     LoginContent(
         state = LoginUiState(isCheckingSession = false, errorMessage = "The email or password is incorrect"),
-        onEmailChange = {}, onPasswordChange = {}, onLogin = {}, onNavigateToRegister = {}
+        onEmailChange = {}, onPasswordChange = {}, onLogin = {}, onNavigateToRegister = {},
+        onShowForgotDialog = {}, onDismissForgotDialog = {}, onForgotEmailChange = {}, onResetPassword = {}
     )
 }

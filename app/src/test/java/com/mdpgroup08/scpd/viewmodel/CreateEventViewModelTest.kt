@@ -2,6 +2,7 @@ package com.mdpgroup08.scpd.viewmodel
 
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
+import com.mdpgroup08.scpd.data.model.User
 import com.mdpgroup08.scpd.data.model.UserRole
 import com.mdpgroup08.scpd.data.network.FakeNetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AuthRepository
@@ -43,7 +44,11 @@ class CreateEventViewModelTest {
     private val now = 1_767_225_600_000L
     private val utc = ZoneOffset.UTC
 
-    private val clubAuth = FakeAuthRepository(UserRole.CLUB, clubId = "club_robotics")
+    private class FakeAuthWithClub(private val inner: FakeAuthRepository) : AuthRepository by inner {
+        override suspend fun currentUser(): User = User(id = "user_1", role = "CLUB", clubId = "club_robotics", name = "Robotics Club", clubName = "Robotics Club")
+    }
+
+    private val clubAuth = FakeAuthWithClub(FakeAuthRepository(UserRole.CLUB, clubId = "club_robotics"))
 
     private val valid = EventForm(
         title = "Intro to Arduino", category = "Technology", location = "Lab B2",

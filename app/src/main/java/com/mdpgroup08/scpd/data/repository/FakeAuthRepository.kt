@@ -37,5 +37,6 @@ class FakeAuthRepository(
     override suspend fun currentClubId() = clubId
     override suspend fun currentUserId() = uid
     override suspend fun verifyCheckInDevice() = true
+    override suspend fun sendPasswordResetEmail(email: String) {}
     override fun signOut() {}
 }

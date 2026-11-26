@@ -41,6 +41,9 @@ interface AdminRepository {
     /** Releases registered phone key for a student (R6-S3/R6-S6). */
     suspend fun releaseStudentPhone(adminUid: String, studentId: String, reason: String, verified2Step: Boolean)
 
+    /** Replaces a club's organiser (R6-S15). */
+    suspend fun replaceClubOrganiser(adminUid: String, oldUid: String, newEmail: String, reason: String, verified2Step: Boolean)
+
     /** Gets list of audit logs (R6-S6). */
     fun getAuditLogs(): Flow<List<AuditEntry>>
 }
@@ -205,6 +208,44 @@ class FirebaseAdminRepository(
                 mapOf(
                     "publicKey" to null,
                     "deviceId" to null
+                )
+            ).await()
+        }
+    }
+
+    override suspend fun replaceClubOrganiser(
+        adminUid: String,
+        oldUid: String,
+        newEmail: String,
+        reason: String,
+        verified2Step: Boolean
+    ) {
+        performAdminAction(adminUid, "REPLACE_ORGANISER", oldUid, reason, verified2Step) {
+            val trimmedEmail = newEmail.trim().lowercase()
+            
+            // 1. Get old user's club info
+            val oldUserDoc = firestore.collection("users").document(oldUid).get().await()
+            val clubId = oldUserDoc.getString("clubId") 
+                ?: throw IllegalArgumentException("Old user is not linked to a club")
+            val clubName = oldUserDoc.getString("clubName") ?: "Club"
+
+            // 2. Find new user by email
+            val newQuery = firestore.collection("users")
+                .whereEqualTo("email", trimmedEmail).get().await()
+            if (newQuery.isEmpty) throw IllegalArgumentException("New organiser email not found")
+            val newUserDoc = newQuery.documents.first()
+
+            // 3. Update old user (remove access)
+            firestore.collection("users").document(oldUid).update(
+                mapOf("clubId" to null, "clubName" to null)
+            ).await()
+
+            // 4. Update new user (grant access)
+            firestore.collection("users").document(newUserDoc.id).update(
+                mapOf(
+                    "role" to UserRole.CLUB.name,
+                    "clubId" to clubId,
+                    "clubName" to clubName
                 )
             ).await()
         }

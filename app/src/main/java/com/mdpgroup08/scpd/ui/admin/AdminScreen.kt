@@ -66,9 +66,11 @@ fun AdminScreen(
                 onTargetIdChange = viewModel::onTargetIdChange,
                 onReasonChange = viewModel::onReasonChange,
                 onNewEndYearChange = viewModel::onNewEndYearChange,
+                onNewOrganiserEmailChange = viewModel::onNewOrganiserEmailChange,
                 onDeactivateAccount = viewModel::deactivateAccount,
                 onUpdateEndYear = viewModel::updateEndYear,
                 onReleasePhone = viewModel::releasePhone,
+                onReplaceOrganiser = viewModel::replaceClubOrganiser,
                 onRunDailyCheck = viewModel::runDailyGraduationCheck
             )
             1 -> AuditLogContent(logs = state.auditLogs)
@@ -84,9 +86,11 @@ fun AdminToolsContent(
     onTargetIdChange: (String) -> Unit,
     onReasonChange: (String) -> Unit,
     onNewEndYearChange: (String) -> Unit,
+    onNewOrganiserEmailChange: (String) -> Unit,
     onDeactivateAccount: () -> Unit,
     onUpdateEndYear: () -> Unit,
     onReleasePhone: () -> Unit,
+    onReplaceOrganiser: () -> Unit,
     onRunDailyCheck: () -> Unit
 ) {
     Column(
@@ -152,6 +156,13 @@ fun AdminToolsContent(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = state.newOrganiserEmailInput,
+                    onValueChange = onNewOrganiserEmailChange,
+                    label = { Text("New Organiser Email (for Replace Club)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
@@ -183,13 +194,21 @@ fun AdminToolsContent(
             ) {
                 Text("Release Phone Key")
             }
-            Button(
-                onClick = onRunDailyCheck,
-                enabled = !state.isLoading,
+            OutlinedButton(
+                onClick = onReplaceOrganiser,
+                enabled = state.is2FaVerified && !state.isLoading,
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Run Daily Check")
+                Text("Replace Organiser")
             }
+        }
+        
+        Button(
+            onClick = onRunDailyCheck,
+            enabled = !state.isLoading,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Run Daily Check")
         }
 
         if (state.isLoading) {

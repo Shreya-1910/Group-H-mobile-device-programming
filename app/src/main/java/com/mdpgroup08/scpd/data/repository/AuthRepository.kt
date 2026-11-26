@@ -58,6 +58,9 @@ interface AuthRepository {
     /** Verifies whether current device key matches student's registered key (R6-S3). */
     suspend fun verifyCheckInDevice(): Boolean
 
+    /** Sends a password reset email (R6-S3). */
+    suspend fun sendPasswordResetEmail(email: String)
+
     fun signOut()
 }
 
@@ -224,6 +227,14 @@ class FirebaseAuthRepository(
     override suspend fun verifyCheckInDevice(): Boolean {
         val user = currentUser() ?: return false
         return keystoreHelper.isDeviceRegistered(user.publicKey)
+    }
+
+    override suspend fun sendPasswordResetEmail(email: String) {
+        try {
+            auth.sendPasswordResetEmail(email.trim().lowercase()).await()
+        } catch (e: Exception) {
+            // Ignore error (R6-S3 AC2): don't leak registered emails
+        }
     }
 
     override fun signOut() = auth.signOut()
