@@ -153,10 +153,9 @@ class AdminApprovalViewModelTest {
     fun `event that has already started cannot be approved`() = runTest {
         repo = FakeEventRepository(listOf(pending("late", submittedDaysAgo = 1).copy(startTime = now - 1000)))
         val vm = viewModel()
-        vm.openApprove(vm.event("late"))
-        vm.confirm()
 
-        assertTrue(vm.uiState.value.dialog?.error!!.contains("already started"))
-        assertEquals(EventStatus.PENDING, repo.getEvent("late").first()!!.status)
+        // R1-S8: instead of being offered for approval, it expires and leaves the queue
+        assertTrue(vm.items().none { it.event.id == "late" })
+        assertEquals(EventStatus.EXPIRED, repo.getEvent("late").first()!!.status)
     }
 }

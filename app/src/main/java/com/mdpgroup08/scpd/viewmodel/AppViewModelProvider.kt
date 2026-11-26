@@ -103,6 +103,11 @@ object AppViewModelProvider {
             val c = scpdApplication().container
             StudentRemindersViewModel(c.bookingRepository, c.eventRepository, c.reminderScheduler)
         }
+
+        initializer {
+            val c = scpdApplication().container
+            StudentEventsViewModel(c.bookingRepository, c.eventRepository, c.networkMonitor)
+        }
     }
 }
 

@@ -60,6 +60,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
 import com.mdpgroup08.scpd.viewmodel.StudentRemindersViewModel
+import com.mdpgroup08.scpd.ui.student.StudentEventsScreen
 
 /** One bottom-bar tab. */
 data class Tab(
@@ -141,8 +142,12 @@ fun StudentHome(onLogOut: () -> Unit) {
                 MarketplaceScreen(onOpenEvent = { /* details screen comes next */ })
             }
 
+            // R4-S10: the student's bookings and waitlists, also offline
             composable("student_my_events") {
-                ComingSoonScreen("My events")
+                StudentEventsScreen(
+                    onOpenEvent = { id -> tabNav.navigate("student_event/$id") },
+                    onBrowse = { tabNav.navigate("student_marketplace") { launchSingleTop = true } }
+                )
             }
 
             composable("student_check_in") {
