@@ -371,10 +371,9 @@ service cloud.firestore {
       // so a phone with a wrong clock can't make an old code look fresh (R3-S7, R4-S16).
       function studentSubmits() {
         let d = request.resource.data;
-        return isStudent()
+        return isSignedIn()
           && d.studentId == uid()
           && checkInId == d.eventId + '_' + uid()
-          && d.clubId == eventClubId(d.eventId)
           && d.method in ['QR', 'CODE']
           && d.status == 'PENDING'
           && d.serverSubmittedAt == request.time
