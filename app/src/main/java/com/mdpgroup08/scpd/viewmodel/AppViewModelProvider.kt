@@ -114,6 +114,34 @@ object AppViewModelProvider {
             val c = scpdApplication().container
             ForYouViewModel(c.eventRepository, c.bookingRepository)
         }
+
+        // ---- Secure check-in (R3, R4) ----
+        initializer {
+            val c = scpdApplication().container
+            ClubCheckInViewModel(c.eventRepository, c.authRepository)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            ShowCodeViewModel(createSavedStateHandle(), c.eventRepository, c.attendanceRepository, c.authRepository)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            AttendanceViewModel(createSavedStateHandle(), c.eventRepository, c.attendanceRepository, c.authRepository)
+        }
+
+        initializer {
+            val c = scpdApplication().container
+            StudentCheckInViewModel(
+                c.bookingRepository,
+                c.eventRepository,
+                c.attendanceRepository,
+                c.authRepository,
+                c.networkMonitor,
+                deviceId = { c.deviceHelper.getDeviceId() }
+            )
+        }
     }
 }
 

@@ -358,5 +358,67 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastCounter', 'endedAt']);
       allow delete: if false;
     }
+
+    // R3, R4: one check-in per student per event, id = eventId_studentId.
+    // The student only sends a code (always Pending); only the event's club decides.
+    match /checkIns/{checkInId} {
+
+      function eventClubId(eventId) {
+        return get(eventPath(eventId)).data.clubId;
+      }
+
+      // Student sends or resends their own check-in. The server stamps the time,
+      // so a phone with a wrong clock can't make an old code look fresh (R3-S7, R4-S16).
+      function studentSubmits() {
+        let d = request.resource.data;
+        return isSignedIn()
+          && d.studentId == uid()
+          && checkInId == d.eventId + '_' + uid()
+          && d.method in ['QR', 'CODE']
+          && d.status == 'PENDING'
+          && d.serverSubmittedAt == request.time
+          && d.reason == null && d.nextStep == null && d.counter == null
+          && d.decidedBy == null && d.decidedAt == null
+          && d.keys().hasOnly(['eventId', 'clubId', 'studentId', 'studentName', 'deviceId', 'method',
+                               'sixDigits', 'qrCounter', 'qrSignature', 'online', 'submittedAt',
+                               'serverSubmittedAt', 'status', 'reason', 'nextStep', 'counter',
+                               'decidedAt', 'decidedBy']);
+      }
+
+      // Club phone saves the result of checking a check-in
+      function clubDecides() {
+        return isClubOwner(resource.data.clubId)
+          && changedKeys().hasOnly(['status', 'reason', 'nextStep', 'counter', 'decidedBy', 'decidedAt'])
+          && request.resource.data.status in ['VERIFIED', 'REJECTED', 'NEEDS_REVIEW']
+          && request.resource.data.decidedBy == uid();
+      }
+
+      // R3-S6: club marks a student present by hand, always with a reason
+      function clubMarksPresent() {
+        let d = request.resource.data;
+        return isClubOwner(d.clubId)
+          && d.clubId == eventClubId(d.eventId)
+          && checkInId == d.eventId + '_' + d.studentId
+          && d.method == 'MANUAL'
+          && d.status == 'VERIFIED'
+          && d.decidedBy == uid()
+          && d.manualReason is string && d.manualReason.size() >= 3;
+      }
+
+      allow read: if isSignedIn()
+        && (resource == null
+          || resource.data.studentId == uid()
+          || isAdmin()
+          || isClubOwner(resource.data.clubId));
+
+      allow create: if studentSubmits() || clubMarksPresent();
+
+      // A Verified check-in can't be replaced by the student (R4-S7: no double check-in)
+      allow update: if (resource.data.studentId == uid() && resource.data.status != 'VERIFIED' && studentSubmits())
+        || clubDecides()
+        || (isClubOwner(resource.data.clubId) && clubMarksPresent());
+
+      allow delete: if false;
+    }
   }
 }

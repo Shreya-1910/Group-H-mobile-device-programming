@@ -42,10 +42,12 @@ import androidx.navigation.compose.rememberNavController
 import com.mdpgroup08.scpd.ui.admin.AdminApprovalScreen
 import com.mdpgroup08.scpd.ui.admin.AdminScreen
 import com.mdpgroup08.scpd.ui.admin.ApprovalQueueScreen
-import com.mdpgroup08.scpd.ui.club.CheckInQrScreen
+import com.mdpgroup08.scpd.ui.club.AttendanceScreen
+import com.mdpgroup08.scpd.ui.club.ClubCheckInScreen
 import com.mdpgroup08.scpd.ui.club.CreateEventScreen
 import com.mdpgroup08.scpd.ui.club.MyEventsScreen
-import com.mdpgroup08.scpd.ui.student.ManualCheckInScreen
+import com.mdpgroup08.scpd.ui.club.ShowCodeScreen
+import com.mdpgroup08.scpd.ui.student.StudentCheckInScreen
 import com.mdpgroup08.scpd.ui.student.MarketplaceScreen
 import com.mdpgroup08.scpd.ui.student.PointsScreen
 import com.mdpgroup08.scpd.ui.student.EventDetailsScreen
@@ -150,8 +152,9 @@ fun StudentHome(onLogOut: () -> Unit) {
                 )
             }
 
+            // R3-S2, R3-S3, R3-S4: check in with the organiser's 6-digit code
             composable("student_check_in") {
-                ManualCheckInScreen()
+                StudentCheckInScreen()
             }
 
             composable("student_points") {
@@ -228,17 +231,31 @@ fun ClubHome(onLogOut: () -> Unit) {
                 CreateEventScreen(copyFromId = eventId, onSaved = { tabNav.navigate("club_my_events") })
             }
 
+            // R3-S1, R4-S23: rotating signed code for one event (eventId read by ShowCodeViewModel)
             composable("club_check_in/{eventId}") { backStackEntry ->
                 val eventId = backStackEntry.arguments?.getString("eventId") ?: ""
-                CheckInQrScreen(eventId = eventId, onBack = { tabNav.popBackStack() })
+                ShowCodeScreen(
+                    onBack = { tabNav.popBackStack() },
+                    onViewList = { tabNav.navigate("club_attendance/$eventId") }
+                )
             }
 
             composable("club_check_in") {
-                ComingSoonScreen("Check-in")
+                ClubCheckInScreen(onOpenEvent = { id -> tabNav.navigate("club_check_in/$id") })
             }
 
+            // R3-S5, R3-S6: attendance list with Mark present
             composable("club_attendance") {
-                ComingSoonScreen("Attendance")
+                ClubCheckInScreen(
+                    onOpenEvent = { id -> tabNav.navigate("club_attendance/$id") },
+                    title = "Attendance",
+                    subtitle = "See who has checked in, and mark students present by hand.",
+                    buttonLabel = "View attendance"
+                )
+            }
+
+            composable("club_attendance/{eventId}") {
+                AttendanceScreen(onBack = { tabNav.popBackStack() })
             }
         }
     }
