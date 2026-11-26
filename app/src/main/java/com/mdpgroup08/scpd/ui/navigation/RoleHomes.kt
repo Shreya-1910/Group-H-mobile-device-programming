@@ -49,6 +49,17 @@ import com.mdpgroup08.scpd.ui.student.ManualCheckInScreen
 import com.mdpgroup08.scpd.ui.student.MarketplaceScreen
 import com.mdpgroup08.scpd.ui.student.PointsScreen
 import com.mdpgroup08.scpd.ui.student.EventDetailsScreen
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mdpgroup08.scpd.viewmodel.AppViewModelProvider
+import com.mdpgroup08.scpd.viewmodel.StudentRemindersViewModel
 
 /** One bottom-bar tab. */
 data class Tab(
@@ -86,6 +97,21 @@ private val adminTabs = listOf(
 @Composable
 fun StudentHome(onLogOut: () -> Unit) {
     val tabNav = rememberNavController()
+
+    // R4-S21: keep the 3-hour reminders in step with this student's bookings
+    viewModel<StudentRemindersViewModel>(factory = AppViewModelProvider.Factory)
+
+    // Android 13+ asks before showing notifications
+    val context = LocalContext.current
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     Scaffold(
         topBar = {

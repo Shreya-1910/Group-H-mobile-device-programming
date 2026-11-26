@@ -90,7 +90,13 @@ class AdminApprovalViewModel(
                         it.copy(queue = ApprovalQueue.Error("Couldn't load the approval queue. Check your connection."))
                     }
                 }
-                .collect { events -> _uiState.update { it.copy(queue = ApprovalQueue.Loaded(toQueue(events))) } }
+                .collect { events ->
+                    // R1-S8: Pending events that have already started expire and leave the queue
+                    val now = clock()
+                    val (overdue, current) = events.partition { it.status == EventStatus.PENDING && it.startTime <= now }
+                    overdue.forEach { expireQuietly(it.id) }
+                    _uiState.update { it.copy(queue = ApprovalQueue.Loaded(toQueue(current))) }
+                }
         }
     }
 
@@ -197,6 +203,13 @@ class AdminApprovalViewModel(
         when (it) {
             is DecisionDialog.Approve -> it.copy(error = message)
             is DecisionDialog.Reject -> it.copy(error = message)
+        }
+    }
+
+    /** Best effort: if it fails (e.g. offline), the next load tries again. */
+    private fun expireQuietly(eventId: String) {
+        viewModelScope.launch {
+            try { eventRepository.expire(eventId) } catch (e: Exception) { }
         }
     }
 

@@ -5,6 +5,7 @@ import android.app.Application
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.mdpgroup08.scpd.reminders.ReminderNotifier
 
 class ScpdApplication : Application() {
 
@@ -15,6 +16,8 @@ class ScpdApplication : Application() {
         super.onCreate()
 
         container = AppContainer(this)
+
+        ReminderNotifier.ensureChannel(this)
 
         // Test Room database creation and access.
         CoroutineScope(Dispatchers.IO).launch {

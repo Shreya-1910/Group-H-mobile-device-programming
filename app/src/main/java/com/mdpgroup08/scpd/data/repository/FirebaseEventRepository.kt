@@ -73,6 +73,18 @@ class FirebaseEventRepository(
             mapOf("status" to EventStatus.REJECTED.name, "rejectionReason" to reason)
         )
 
+    override suspend fun expire(eventId: String) {
+        val ref = events.document(eventId)
+        db.runTransaction { tx ->
+            val event = tx.get(ref).toObject(Event::class.java) ?: return@runTransaction null
+            // Only a still-Pending event that has started; the rules check this again with server time
+            if (event.status == EventStatus.PENDING && System.currentTimeMillis() >= event.startTime) {
+                tx.update(ref, "status", EventStatus.EXPIRED.name)
+            }
+            null
+        }.await()
+    }
+
     /**
      * One transaction: check the event is still Pending, update it, and write the audit entry.
      * The audit entry has a fixed ID so the security rules can require it (R6-S20).

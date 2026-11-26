@@ -4,71 +4,80 @@ service cloud.firestore {
 
   match /databases/{database}/documents {
 
-    // ==================================
-    // HELPER FUNCTIONS
-    // ==================================
+        // ==================================
+        // HELPER FUNCTIONS
+        // ==================================
 
-    // Check whether user is signed in
-    function isSignedIn() {
-      return request.auth != null;
-    }
+        function isSignedIn() {
+          return request.auth != null;
+        }
 
-    // Check whether user document exists
-    function userExists() {
-      return isSignedIn()
-        && exists(
-          /databases/$(database)/documents/users/$(request.auth.uid)
-        );
-    }
+        function userExists() {
+          return isSignedIn()
+            && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+        }
 
-    // Get current user's document
-    function userData() {
-      return get(
-        /databases/$(database)/documents/users/$(request.auth.uid)
-      ).data;
-    }
+        function userData() {
+          return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        }
 
-    // Check whether current user is an ADMIN
-    function isAdmin() {
-      return userExists()
-        && (userData().get('role', '') == 'ADMIN' || userData().get('role', '') == 'admin');
-    }
+        function isAdmin() {
+          return userExists()
+            && (userData().get('role', '') == 'ADMIN' || userData().get('role', '') == 'admin');
+        }
 
-    // Check whether current user is a CLUB
-    function isClub() {
-      return userExists()
-        && (userData().get('role', '') == 'CLUB' || userData().get('role', '') == 'club')
-        && userData().get('clubId', '') != '';
-    }
+        function isClub() {
+          return userExists()
+            && (userData().get('role', '') == 'CLUB' || userData().get('role', '') == 'club')
+            && userData().get('clubId', '') != '';
+        }
 
-    // Check whether current user is a STUDENT
-    function isStudent() {
-      return userExists()
-        && (userData().get('role', '') == 'STUDENT' || userData().get('role', '') == 'student');
-    }
+        function isStudent() {
+          return userExists()
+            && (userData().get('role', '') == 'STUDENT' || userData().get('role', '') == 'student');
+        }
 
-    // Check whether current club owns the event
-    function isClubOwner(clubId) {
-      return isClub()
-        && clubId != null
-        && userData().get('clubId', '') == clubId;
-    }
+        function isClubOwner(clubId) {
+          return isClub()
+            && clubId != null
+            && userData().get('clubId', '') == clubId;
+        }
 
-    // Check whether event is finalised
-    function isFinalised(status) {
-      return status == 'APPROVED'
-        || status == 'REJECTED';
-    }
+        // ---- Events and bookings (Member 1) ----
 
-    // Check required event fields
-    function hasEventFields(data) {
-      return data.keys().hasAll([
-        'clubId',
-        'status'
-      ])
-      && data.get('clubId', null) != null
-      && data.get('status', null) != null;
-    }
+        function uid() {
+          return request.auth.uid;
+        }
+
+        // Server time, so changing the phone clock can't get round the rules
+        function nowMs() {
+          return request.time.toMillis();
+        }
+
+        // Booking, cancelling and the waitlist close 2 hours before the start (R2-S4, R2-S5, R2-S8)
+        function cutoffMs() {
+          return 2 * 60 * 60 * 1000;
+        }
+
+        function eventPath(eventId) {
+          return /databases/$(database)/documents/events/$(eventId);
+        }
+
+        function bookingPath(eventId, studentId) {
+          return /databases/$(database)/documents/bookings/$(eventId + '_' + studentId);
+        }
+
+        function changedKeys() {
+          return request.resource.data.diff(resource.data).affectedKeys();
+        }
+
+        // R1-S1: title given, points 1-10, capacity at least 1, ends after it starts
+        function validEventDetails(d) {
+          return d.title is string && d.title.size() > 0
+            && d.requestedPoints is int && d.requestedPoints >= 1 && d.requestedPoints <= 10
+            && d.capacity is int && d.capacity >= 1
+            && d.startTime is int && d.endTime is int && d.endTime > d.startTime;
+        }
 
     // ==================================
     // 1. USERS
@@ -91,56 +100,227 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ==================================
-    // 2. EVENTS
-    // ==================================
+        // ==================================
+        // 2. EVENTS (Member 1: R1-S1 to R1-S8, R2-S4 to R2-S10)
+        // ==================================
 
-    match /events/{eventId} {
+        match /events/{eventId} {
 
-      // Signed-in users can read all events (Marketplace filters APPROVED, Club screen filters by clubId)
-      allow read: if isSignedIn();
+          // R1-S6, R1-S7: only a DRAFT can be edited, by its own club; approval fields can't be forced
+          function clubEditsDraft() {
+            let d = request.resource.data;
+            return isClubOwner(resource.data.clubId)
+              && resource.data.status == 'DRAFT'
+              && d.status in ['DRAFT', 'PENDING']
+              && d.clubId == resource.data.clubId
+              && validEventDetails(d)
+              && d.get('approvedPoints', null) == null
+              && d.get('bookedCount', 0) == 0
+              && d.get('waitlist', []).size() == 0;
+          }
 
-      // Clubs can create their own events in DRAFT or PENDING status
-      allow create: if hasEventFields(request.resource.data)
-        && (isClubOwner(request.resource.data.clubId) || isSignedIn())
-        && (request.resource.data.status == 'DRAFT' || request.resource.data.status == 'PENDING');
+          // R1-S4, R1-S5: only an admin decides, only on a PENDING event that hasn't started,
+          // and only together with its audit entry (R6-S20)
+          function adminDecides() {
+            let d = request.resource.data;
+            return isAdmin()
+              && resource.data.status == 'PENDING'
+              && nowMs() < resource.data.startTime
+              && existsAfter(/databases/$(database)/documents/auditLog/$('event_' + eventId + '_decision'))
+              && (
+                (d.status == 'APPROVED'
+                  && changedKeys().hasOnly(['status', 'approvedPoints'])
+                  && d.approvedPoints is int
+                  && d.approvedPoints >= 1
+                  && d.approvedPoints <= resource.data.requestedPoints)
+                || (d.status == 'REJECTED'
+                  && changedKeys().hasOnly(['status', 'rejectionReason'])
+                  && d.rejectionReason is string
+                  && d.rejectionReason.size() > 0)
+              );
+          }
 
-      // Clubs can update non-finalised events; Admins can update to APPROVE or REJECT
-      allow update: if isAdmin() || isSignedIn();
+          // R1-S8: anyone signed in may mark a PENDING event EXPIRED, but only once it has started
+          function expires() {
+            return isSignedIn()
+              && resource.data.status == 'PENDING'
+              && nowMs() >= resource.data.startTime
+              && request.resource.data.status == 'EXPIRED'
+              && changedKeys().hasOnly(['status']);
+          }
 
-      // Clubs can delete their own non-finalised events
-      allow delete: if isClubOwner(resource.data.clubId) || isAdmin();
-    }
+          // R1-S9: the owning club can cancel an approved event with a reason
+          function clubCancels() {
+            return isClubOwner(resource.data.clubId)
+              && resource.data.status == 'APPROVED'
+              && request.resource.data.status == 'CANCELLED'
+              && changedKeys().hasOnly(['status', 'cancellationReason'])
+              && request.resource.data.cancellationReason is string
+              && request.resource.data.cancellationReason.size() > 0;
+          }
 
-    // ==================================
-    // 3. BOOKINGS
-    // ==================================
+          // R6-S18 EX4: an admin deactivating a student can release that student's places
+          function adminReleasesPlaces() {
+            return isAdmin() && changedKeys().hasOnly(['bookedCount', 'waitlist']);
+          }
 
-    match /bookings/{bookingId} {
+          // ---- Student booking changes (R2-S4, R2-S5, R2-S8, R2-S10) ----
 
-      allow read: if isSignedIn();
+          function wlBefore() { return resource.data.get('waitlist', []); }
+          function wlAfter() { return request.resource.data.get('waitlist', []); }
+          function countChange() { return request.resource.data.bookedCount - resource.data.bookedCount; }
+          function beforeCutoff() { return nowMs() < resource.data.startTime - cutoffMs(); }
 
-      // Students can create bookings for themselves
-      allow create: if isSignedIn()
-        && request.resource.data.keys().hasAll(['studentId'])
-        && request.resource.data.studentId == request.auth.uid;
+          function bookedBefore(studentId) {
+            return exists(bookingPath(eventId, studentId))
+              && get(bookingPath(eventId, studentId)).data.status == 'CONFIRMED';
+          }
 
-      // Admins can update bookings
-      allow update: if isAdmin() || isSignedIn();
+          function bookedAfter(studentId) {
+            return existsAfter(bookingPath(eventId, studentId))
+              && getAfter(bookingPath(eventId, studentId)).data.status == 'CONFIRMED';
+          }
 
-      // Allow students to cancel their own bookings (delete)
-      allow delete: if isSignedIn() && resource.data.studentId == request.auth.uid;
-    }
+          // Book: one more place, my booking is now CONFIRMED, I leave the queue if I was in it
+          function books() {
+            return beforeCutoff()
+              && countChange() == 1
+              && !bookedBefore(uid())
+              && bookedAfter(uid())
+              && wlAfter() == wlBefore().removeAll([uid()]);
+          }
+
+          // Cancel with nobody waiting: one place fewer, my booking is no longer CONFIRMED
+          function cancels() {
+            return beforeCutoff()
+              && countChange() == -1
+              && bookedBefore(uid())
+              && !bookedAfter(uid())
+              && wlBefore().size() == 0
+              && wlAfter().size() == 0;
+          }
+
+          // Cancel with a queue: my place goes to the first in line (R2-S5 AC2), count stays the same
+          function cancelsAndPromotes() {
+            return beforeCutoff()
+              && countChange() == 0
+              && bookedBefore(uid())
+              && !bookedAfter(uid())
+              && wlBefore().size() > 0
+              && wlAfter() == wlBefore()[1:wlBefore().size()]
+              && bookedAfter(wlBefore()[0]);
+          }
+
+          // Join the end of the queue of a full event
+          function joinsWaitlist() {
+            return beforeCutoff()
+              && countChange() == 0
+              && !bookedBefore(uid())
+              && resource.data.bookedCount >= resource.data.capacity
+              && !(uid() in wlBefore())
+              && wlAfter() == wlBefore().concat([uid()]);
+          }
+
+          // Leaving a queue is always allowed (also when booking an overlapping event, R2-S5 EX1)
+          function leavesWaitlist() {
+            return countChange() == 0
+              && uid() in wlBefore()
+              && wlAfter() == wlBefore().removeAll([uid()]);
+          }
+
+          // R2-S10: students can only change the count and queue, never more than capacity,
+          // and only in one of the allowed ways above
+          function studentBookingChange() {
+            return isStudent()
+              && resource.data.status == 'APPROVED'
+              && changedKeys().hasOnly(['bookedCount', 'waitlist'])
+              && request.resource.data.bookedCount >= 0
+              && request.resource.data.bookedCount <= resource.data.capacity
+              && (books() || cancels() || cancelsAndPromotes() || joinsWaitlist() || leavesWaitlist());
+          }
+
+          allow read: if isSignedIn();
+
+          // R1-S1, R1-S2: a club creates its own event as DRAFT, or submits it straight away as PENDING
+          allow create: if isClubOwner(request.resource.data.clubId)
+            && request.resource.data.status in ['DRAFT', 'PENDING']
+            && validEventDetails(request.resource.data)
+            && request.resource.data.get('approvedPoints', null) == null
+            && request.resource.data.get('bookedCount', 0) == 0
+            && request.resource.data.get('waitlist', []).size() == 0;
+
+          allow update: if clubEditsDraft()
+            || adminDecides()
+            || expires()
+            || clubCancels()
+            || adminReleasesPlaces()
+            || studentBookingChange();
+
+          // Never deleted: rejected, cancelled or expired instead, so the history is kept
+          allow delete: if false;
+        }
+        // ==================================
+        // 3. BOOKINGS (Member 1: R2-S4, R2-S5, R2-S8, R2-S10, R6-S6)
+        // ==================================
+
+        match /bookings/{bookingId} {
+
+          // R2-S4, R2-S10 AC2: a student books only for themselves, in the same write that takes a place;
+          // R2-S8: and can cancel their own confirmed booking
+          function ownBooking() {
+            let d = request.resource.data;
+            let ev = eventPath(d.eventId);
+            return isStudent()
+              && d.studentId == uid()
+              && bookingId == d.eventId + '_' + uid()
+              && (
+                (d.status == 'CONFIRMED'
+                  && d.get('fromWaitlist', false) == false
+                  && getAfter(ev).data.bookedCount == get(ev).data.bookedCount + 1)
+                || (d.status == 'CANCELLED'
+                  && resource != null
+                  && resource.data.status == 'CONFIRMED')
+              );
+          }
+
+          // R2-S5 AC2: when I cancel, the first student in the queue gets my place
+          function promotedFromWaitlist() {
+            let d = request.resource.data;
+            let wl = get(eventPath(d.eventId)).data.get('waitlist', []);
+            return isStudent()
+              && wl.size() > 0
+              && d.studentId == wl[0]
+              && bookingId == d.eventId + '_' + wl[0]
+              && d.status == 'CONFIRMED'
+              && d.fromWaitlist == true
+              && getAfter(eventPath(d.eventId)).data.get('waitlist', []) == wl[1:wl.size()]
+              && getAfter(bookingPath(d.eventId, uid())).data.status == 'CANCELLED';
+          }
+
+          // R6-S6: a student sees only their own bookings; admins see all; the club sees its own events'.
+          // A booking that doesn't exist yet can be checked (resource == null).
+          allow read: if isSignedIn()
+            && (resource == null
+              || resource.data.studentId == uid()
+              || isAdmin()
+              || isClubOwner(get(eventPath(resource.data.eventId)).data.clubId));
+
+          allow create, update: if ownBooking() || promotedFromWaitlist() || isAdmin();
+
+          // Never deleted: cancelled instead, so the history is kept
+          allow delete: if false;
+        }
 
     // ==================================
     // 4. AUDIT LOGS
     // ==================================
 
-    match /auditLog/{docId} {
-
-      // Decision logs e.g. auditLog/event_{id}_decision
-      allow read, create, update: if isSignedIn();
-    }
+        // R6-S20: approval decisions are written once by the admin, with the decision; nobody can edit them
+        match /auditLog/{docId} {
+          allow read: if isAdmin();
+          allow create: if isAdmin() && request.resource.data.actorId == uid();
+          allow update, delete: if false;
+        }
 
     match /audit_logs/{auditId} {
 

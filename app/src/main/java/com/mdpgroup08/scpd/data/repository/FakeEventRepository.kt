@@ -48,6 +48,13 @@ class FakeEventRepository(initial: List<Event> = sampleEvents()) : EventReposito
             it.copy(status = EventStatus.REJECTED, rejectionReason = reason)
         }
 
+    override suspend fun expire(eventId: String) {
+        val event = store.value.find { it.id == eventId } ?: return
+        if (event.status == EventStatus.PENDING && System.currentTimeMillis() >= event.startTime) {
+            update(eventId) { it.copy(status = EventStatus.EXPIRED) }
+        }
+    }
+
     /** Same rules as the Firebase transaction: only a Pending event can be decided, and an audit entry is written. */
     private fun decide(eventId: String, adminId: String, action: String, reason: String, change: (Event) -> Event) {
         val event = store.value.find { it.id == eventId } ?: throw EventDecisionException.NotFound

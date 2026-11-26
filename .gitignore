@@ -14,3 +14,5 @@
 .cxx
 local.properties
 .idea/deploymentTargetSelector.xml
+hs_err_pid*.log
+replay_pid*.log
