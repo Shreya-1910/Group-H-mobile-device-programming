@@ -12,8 +12,11 @@ Every model has default values so Firestore can create it with `toObject()`.
 | `bookings` | `{eventId}_{studentId}` | `Booking` | Sanjanaah   |
 | `appeals` | auto ID | `Appeal` | Shreyashree |
 | `auditLog` | auto ID, or `event_{eventId}_decision` for approvals | `AuditEntry` | Mark        |
+| `eventSecrets` | `{eventId}` | (map) | Ziad |
+| `codeDisplays` | auto ID | `CodeDisplay` | Ziad |
+| `checkIns` | `{eventId}_{studentId}` | `Attendance` | Ziad |
 
-Collections for check-ins, session logs and points entries will be added by Members 2 and 3.
+Collections for points entries will be added by Member 3.
 
 The waitlist is not a separate collection. It is stored on each event (`events.waitlist`), so a
 cancellation can promote the next student in the same transaction (see below).
@@ -73,6 +76,38 @@ Booking, cancelling and the waitlist all close 2 hours before the event starts.
 | `clubId`, `clubName` | String? | Set only for club accounts, linked to exactly one club |
 
 Member 4's `User` model also stores account status, the device key and study details (R6). See `User.kt`.
+
+## Secure attendance (Ziad)
+
+### eventSecrets
+
+| Field | Type | Notes |
+|---|---|---|
+| `secret` | String | Random key for signing the rotating codes. Readable only by the event's club, never by students (R3-S9) |
+| `clubId`, `createdAt` | String, Long | Created once per event, in a transaction |
+
+### codeDisplays (session log)
+
+| Field | Type | Notes |
+|---|---|---|
+| `eventId`, `clubId`, `organiserId` | String | Who showed the code, for which event |
+| `startedAt`, `endedAt` | Long, Long? | One document each time Show code is pressed; `endedAt` set on Hide (R4-S23) |
+| `firstCounter`, `lastCounter` | Long | The 15-second code periods shown. Offline check-ins must match one of these (R4-S19) |
+
+### checkIns
+
+| Field | Type | Notes |
+|---|---|---|
+| `eventId`, `clubId`, `studentId`, `studentName` | String | The document ID `{eventId}_{studentId}` allows one check-in per student per event (R4-S7) |
+| `deviceId` | String | One device can't check in two students (R4-S15) |
+| `method` | AttendanceMethod | `QR`, `CODE` or `MANUAL` |
+| `sixDigits` / `qrCounter`, `qrSignature` | String? / Long?, String? | What the student sent. The phone never decides if it is valid |
+| `online` | Boolean | Offline check-ins are checked against the session log |
+| `submittedAt`, `serverSubmittedAt` | Long, Timestamp | Server time is used for freshness, so a wrong phone clock can't help (R3-S7, R4-S16) |
+| `status` | AttendanceStatus | `PENDING`, `VERIFIED`, `REJECTED`, `NEEDS_REVIEW`. Students can only write `PENDING` |
+| `reason`, `nextStep` | String? | Shown to the student when rejected (R3-S4) |
+| `counter`, `decidedBy`, `decidedAt` | Long?, String?, Long? | Set by the club's phone when it checks the code |
+| `manualReason` | String? | Required when the club marks a student present by hand; also written to `audit_logs` (R3-S6) |
 
 ## Rules for changing this file
 

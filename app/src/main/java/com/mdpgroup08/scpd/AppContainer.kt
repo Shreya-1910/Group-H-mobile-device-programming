@@ -9,6 +9,8 @@ import com.mdpgroup08.scpd.data.local.AppDatabase
 import com.mdpgroup08.scpd.data.network.AndroidNetworkMonitor
 import com.mdpgroup08.scpd.data.network.NetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AdminRepository
+import com.mdpgroup08.scpd.data.repository.AttendanceRepository
+import com.mdpgroup08.scpd.data.repository.FirebaseAttendanceRepository
 import com.mdpgroup08.scpd.data.repository.AuthRepository
 import com.mdpgroup08.scpd.data.repository.CheckInRepository
 import com.mdpgroup08.scpd.data.repository.EventRepository
@@ -57,6 +59,11 @@ class AppContainer(context: Context) {
 
     val adminRepository: AdminRepository by lazy {
         FirebaseAdminRepository(firestore)
+    }
+
+    // Secure check-in: event secrets, session log, check-ins (R3, R4)
+    val attendanceRepository: AttendanceRepository by lazy {
+        FirebaseAttendanceRepository(firestore)
     }
 
     val networkMonitor: NetworkMonitor by lazy {
