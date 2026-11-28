@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mdpgroup08.scpd.data.attendance.ReviewRules
 import com.mdpgroup08.scpd.data.model.AttendanceStatus
 import com.mdpgroup08.scpd.ui.components.CenteredContent
 import com.mdpgroup08.scpd.ui.components.ErrorWithRetry
@@ -108,6 +109,9 @@ private fun CodeEntry(state: StudentCheckInUiState, time: SimpleDateFormat, view
     val event = state.selected ?: return
     val checkIn = state.checkIn
     val context = LocalContext.current
+    // Verified, or a final rejection by the organiser: no new code, the student appeals instead
+    val canTryAgain = checkIn?.status != AttendanceStatus.VERIFIED &&
+        !ReviewRules.isFinalRejection(checkIn?.status?.name, checkIn?.nextStep)
     // R3-S2: ask for the camera only when the student taps Scan
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) viewModel.startScan()
@@ -184,14 +188,14 @@ private fun CodeEntry(state: StudentCheckInUiState, time: SimpleDateFormat, view
                 onClick = viewModel::stopScan,
                 modifier = Modifier.fillMaxWidth().height(48.dp)
             ) { Text("Cancel scan") }
-        } else if (checkIn?.status != AttendanceStatus.VERIFIED && !state.checking) {
+        } else if (canTryAgain && !state.checking) {
             Button(
                 onClick = openScanner,
                 modifier = Modifier.fillMaxWidth().height(48.dp).testTag("scanButton")
             ) { Text("Scan QR code") }
         }
 
-        if (!state.scanning && checkIn?.status != AttendanceStatus.VERIFIED) {
+        if (!state.scanning && canTryAgain) {
             Text("Or type the 6-digit code shown on the organiser's screen.")
             OutlinedTextField(
                 value = state.code,

@@ -128,7 +128,7 @@ object AppViewModelProvider {
 
         initializer {
             val c = scpdApplication().container
-            AttendanceViewModel(createSavedStateHandle(), c.eventRepository, c.attendanceRepository, c.authRepository)
+            AttendanceViewModel(createSavedStateHandle(), c.eventRepository, c.attendanceRepository, c.authRepository, c.networkMonitor)
         }
 
         initializer {
