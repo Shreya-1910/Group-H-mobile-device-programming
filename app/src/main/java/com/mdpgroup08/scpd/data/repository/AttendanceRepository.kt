@@ -5,14 +5,25 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Source
 import com.mdpgroup08.scpd.data.attendance.CheckInCodes
+import com.mdpgroup08.scpd.data.attendance.ReviewRules
 import com.mdpgroup08.scpd.data.model.Attendance
 import com.mdpgroup08.scpd.data.model.AttendanceMethod
 import com.mdpgroup08.scpd.data.model.AttendanceStatus
 import com.mdpgroup08.scpd.data.model.Event
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.tasks.await
+
+/** R4-S18 EX1: someone else already decided this check-in. [decidedBy] is their user id. */
+class CheckInAlreadyDecidedException(val decidedBy: String?) :
+    Exception("This check-in was already decided.")
+
+/** R4-S18 EX2: approving or rejecting needs a connection; decisions are never saved only on the phone. */
+class ReviewNeedsConnectionException :
+    Exception("You need a connection to approve or reject. Try again when you're online.")
 
 /** Firebase refused access (security rules), so this account can't run check-in for the event. */
 class CheckInNotAllowedException :
@@ -75,6 +86,12 @@ interface AttendanceRepository {
 
     /** R3-S6: the club marks a booked student present by hand, with a reason, and audits it. */
     suspend fun markPresent(event: Event, studentId: String, studentName: String, reason: String, organiserId: String, now: Long)
+
+    /**
+     * R4-S18: the club approves or rejects a Needs review check-in. Runs as a transaction so the
+     * first decision wins (EX1), needs a connection (EX2), and is written to the audit log (AC2).
+     */
+    suspend fun review(checkInId: String, approve: Boolean, reason: String, organiserId: String, now: Long)
 
     // ---- Student ----
 
@@ -158,7 +175,7 @@ class FirebaseAttendanceRepository(
                 trySend(list)
             }
         awaitClose { reg.remove() }
-    }
+    }.keepListening()
 
     override fun observeEventCheckIns(eventId: String, clubId: String): Flow<List<Attendance>> = callbackFlow {
         val reg = checkIns.whereEqualTo("eventId", eventId).whereEqualTo("clubId", clubId)
@@ -167,7 +184,7 @@ class FirebaseAttendanceRepository(
                 trySend(snap?.toObjects(Attendance::class.java).orEmpty())
             }
         awaitClose { reg.remove() }
-    }
+    }.keepListening()
 
     override suspend fun hasConfirmedBooking(eventId: String, studentId: String): Boolean = try {
         db.collection("bookings").document("${eventId}_$studentId").get().await()
@@ -237,6 +254,42 @@ class FirebaseAttendanceRepository(
         batch.commit().await()
     }
 
+    override suspend fun review(checkInId: String, approve: Boolean, reason: String, organiserId: String, now: Long) {
+        val doc = checkIns.document(checkInId)
+        try {
+            db.runTransaction { t ->
+                val snap = t.get(doc)
+                if (snap.getString("status") != AttendanceStatus.NEEDS_REVIEW.name) {
+                    throw CheckInAlreadyDecidedException(snap.getString("decidedBy"))
+                }
+                t.update(doc, mapOf(
+                    "status" to (if (approve) AttendanceStatus.VERIFIED else AttendanceStatus.REJECTED).name,
+                    "reason" to (if (approve) "Approved by the organiser" else reason),
+                    "nextStep" to (if (approve) null else ReviewRules.APPEAL_STEP),
+                    "decidedBy" to organiserId,
+                    "decidedAt" to now
+                ))
+                // AC2: every decision goes to the audit log, with who, when and why.
+                t.set(db.collection("audit_logs").document(), mapOf(
+                    "actorId" to organiserId,
+                    "action" to if (approve) "CHECK_IN_APPROVED" else "CHECK_IN_REJECTED",
+                    "targetId" to checkInId,
+                    "reason" to reason,
+                    "timestamp" to now
+                ))
+                null
+            }.await()
+        } catch (e: Exception) {
+            // Firestore may wrap our exception, so unwrap it for the ViewModel
+            val cause = (e as? CheckInAlreadyDecidedException) ?: (e.cause as? CheckInAlreadyDecidedException)
+            if (cause != null) throw cause
+            val code = (e as? FirebaseFirestoreException)?.code ?: (e.cause as? FirebaseFirestoreException)?.code
+            if (code == FirebaseFirestoreException.Code.UNAVAILABLE) throw ReviewNeedsConnectionException()
+            if (code == FirebaseFirestoreException.Code.PERMISSION_DENIED) throw CheckInNotAllowedException()
+            throw e
+        }
+    }
+
     override fun submitCheckIn(checkIn: Attendance, onRejected: (Exception) -> Unit) {
         checkIns.document(Attendance.idFor(checkIn.eventId, checkIn.studentId)).set(mapOf(
             "eventId" to checkIn.eventId,
@@ -270,5 +323,16 @@ class FirebaseAttendanceRepository(
             trySend(if (snap?.exists() == true) snap.toObject(Attendance::class.java) else null)
         }
         awaitClose { reg.remove() }
+    }.keepListening()
+
+    /**
+     * If a listener fails (no permission for a moment, network drop, rules being re-published),
+     * start it again after 3 s instead of stopping for good. Without this, the club phone could
+     * stop checking codes and the student would wait forever.
+     */
+    private fun <T> Flow<T>.keepListening(): Flow<T> = retryWhen { cause, _ ->
+        android.util.Log.w("SCPD-CheckIn", "Listener stopped, retrying in 3 s", cause)
+        delay(3_000)
+        true
     }
 }

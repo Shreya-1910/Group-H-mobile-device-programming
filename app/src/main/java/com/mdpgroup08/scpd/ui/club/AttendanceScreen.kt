@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mdpgroup08.scpd.data.attendance.ReviewRules
 import com.mdpgroup08.scpd.data.model.AttendanceStatus
 import com.mdpgroup08.scpd.ui.components.CenteredContent
 import com.mdpgroup08.scpd.ui.components.ErrorWithRetry
@@ -76,7 +77,12 @@ fun AttendanceScreen(
                 item { Text("No bookings yet.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(state.rows, key = { it.studentId }) { row ->
-                AttendanceRowCard(row, onMarkPresent = { viewModel.startMarking(row) })
+                AttendanceRowCard(
+                    row,
+                    onMarkPresent = { viewModel.startMarking(row) },
+                    onApprove = { viewModel.startReview(row, approve = true) },
+                    onReject = { viewModel.startReview(row, approve = false) }
+                )
             }
             if (state.scansPerDisplay.isNotEmpty()) {
                 item {
@@ -113,10 +119,49 @@ fun AttendanceScreen(
             dismissButton = { TextButton(onClick = viewModel::cancelMarking) { Text("Cancel") } }
         )
     }
+
+    // R4-S18: approve or reject a Needs review check-in
+    state.reviewing?.let { row ->
+        val approve = state.reviewApprove
+        AlertDialog(
+            onDismissRequest = viewModel::cancelReview,
+            title = { Text(if (approve) "Approve ${row.name}?" else "Reject ${row.name}?") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Needs review: ${row.checkIn?.reason ?: ""}")
+                    Text(
+                        if (approve) "They will be marked Verified. Saved with your name in the audit log."
+                        else "They will see your reason and can appeal. Saved with your name in the audit log."
+                    )
+                    if (!approve) {
+                        OutlinedTextField(
+                            value = state.reviewReason,
+                            onValueChange = viewModel::onReviewReasonChange,
+                            label = { Text("Reason for the student") },
+                            isError = state.reviewError != null,
+                            modifier = Modifier.fillMaxWidth().testTag("rejectReason")
+                        )
+                    }
+                    state.reviewError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmReview, enabled = !state.isSaving) {
+                    Text(if (approve) "Approve" else "Reject")
+                }
+            },
+            dismissButton = { TextButton(onClick = viewModel::cancelReview) { Text("Cancel") } }
+        )
+    }
 }
 
 @Composable
-private fun AttendanceRowCard(row: AttendanceRow, onMarkPresent: () -> Unit) {
+private fun AttendanceRowCard(
+    row: AttendanceRow,
+    onMarkPresent: () -> Unit,
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
     val status = row.checkIn?.status
     val (label, color) = when (status) {
         AttendanceStatus.VERIFIED -> "Verified" to Color(0xFF2E7D32)
@@ -133,8 +178,32 @@ private fun AttendanceRowCard(row: AttendanceRow, onMarkPresent: () -> Unit) {
                 row.checkIn?.manualReason?.let { Text("Manual: $it", style = MaterialTheme.typography.bodySmall) }
             }
             Text(label, color = color, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 8.dp))
-            if (status != AttendanceStatus.VERIFIED) {
+            if (status != AttendanceStatus.VERIFIED && status != AttendanceStatus.NEEDS_REVIEW) {
                 TextButton(onClick = onMarkPresent) { Text("Mark present") }
+            }
+        }
+        // R4-S18 AC1 / EX5: who decides a Needs review check-in
+        if (status == AttendanceStatus.NEEDS_REVIEW) {
+            when (ReviewRules.whoDecides(row.checkIn?.reason)) {
+                ReviewRules.Who.CLUB -> Row(
+                    Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onReject, modifier = Modifier.testTag("rejectButton")) {
+                        Text("Reject", color = Color(0xFFC62828))
+                    }
+                    TextButton(onClick = onApprove, modifier = Modifier.testTag("approveButton")) { Text("Approve") }
+                }
+                ReviewRules.Who.WAITING -> Text(
+                    "Waiting for the organiser's phone to sync",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+                )
+                ReviewRules.Who.ADMIN -> Text(
+                    "With s-CPD admin",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(start = 12.dp, bottom = 8.dp)
+                )
             }
         }
     }

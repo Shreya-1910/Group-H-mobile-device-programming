@@ -4,16 +4,20 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mdpgroup08.scpd.data.attendance.ClubCheckInProcessor
+import com.mdpgroup08.scpd.data.attendance.ReviewRules
 import com.mdpgroup08.scpd.data.model.Attendance
 import com.mdpgroup08.scpd.data.model.AttendanceStatus
 import com.mdpgroup08.scpd.data.model.Event
 import com.mdpgroup08.scpd.data.model.EventStatus
 import com.mdpgroup08.scpd.data.repository.AttendanceRepository
+import com.mdpgroup08.scpd.data.network.NetworkMonitor
 import com.mdpgroup08.scpd.data.repository.AuthRepository
+import com.mdpgroup08.scpd.data.repository.CheckInAlreadyDecidedException
 import com.mdpgroup08.scpd.data.repository.CheckInNotAllowedException
 import com.mdpgroup08.scpd.data.repository.CheckInNotLoadedException
 import com.mdpgroup08.scpd.data.repository.CodeDisplay
 import com.mdpgroup08.scpd.data.repository.EventRepository
+import com.mdpgroup08.scpd.data.repository.ReviewNeedsConnectionException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,7 +50,12 @@ data class AttendanceUiState(
     val markReason: String = "",
     val markError: String? = null,
     val isSaving: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    /** R4-S18: Needs review check-in being approved or rejected, for the dialog. */
+    val reviewing: AttendanceRow? = null,
+    val reviewApprove: Boolean = true,
+    val reviewReason: String = "",
+    val reviewError: String? = null
 )
 
 /**
@@ -58,6 +67,7 @@ class AttendanceViewModel(
     private val eventRepository: EventRepository,
     private val attendanceRepository: AttendanceRepository,
     private val authRepository: AuthRepository,
+    private val networkMonitor: NetworkMonitor,
     private val clock: () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() {
 
@@ -182,6 +192,68 @@ class AttendanceViewModel(
                 }
             } catch (ex: Exception) {
                 _uiState.update { it.copy(isSaving = false, markError = "Couldn't save. Check your connection and try again.") }
+            }
+        }
+    }
+
+    // ---- R4-S18: organiser review of Needs review check-ins ----
+
+    fun startReview(row: AttendanceRow, approve: Boolean) {
+        val c = row.checkIn ?: return
+        if (c.status != AttendanceStatus.NEEDS_REVIEW) return
+        if (ReviewRules.whoDecides(c.reason) != ReviewRules.Who.CLUB) return
+        _uiState.update { it.copy(reviewing = row, reviewApprove = approve, reviewReason = "", reviewError = null) }
+    }
+
+    fun onReviewReasonChange(text: String) {
+        _uiState.update { it.copy(reviewReason = text.take(200), reviewError = null) }
+    }
+
+    fun cancelReview() {
+        _uiState.update { it.copy(reviewing = null, reviewReason = "", reviewError = null) }
+    }
+
+    fun confirmReview() {
+        val state = _uiState.value
+        val row = state.reviewing ?: return
+        val checkIn = row.checkIn ?: return
+        val approve = state.reviewApprove
+        val reason = state.reviewReason.trim()
+        // EX3: a rejection needs a reason the student can read
+        if (!approve && !ReviewRules.isValidRejectReason(reason)) {
+            _uiState.update { it.copy(reviewError = "Give a reason the student can read, for example \"Not at the event\"") }
+            return
+        }
+        // EX2: decisions are never saved only on the organiser's phone
+        if (!networkMonitor.isOnline.value) {
+            _uiState.update { it.copy(reviewError = "You need a connection to approve or reject. Try again when you're online.") }
+            return
+        }
+        _uiState.update { it.copy(isSaving = true, reviewError = null) }
+        viewModelScope.launch {
+            try {
+                attendanceRepository.review(
+                    checkInId = checkIn.id,
+                    approve = approve,
+                    reason = if (approve) "Approved by organiser after review (was: ${checkIn.reason ?: "Needs review"})" else reason,
+                    organiserId = organiserId,
+                    now = clock()
+                )
+                _uiState.update {
+                    it.copy(
+                        isSaving = false, reviewing = null, reviewReason = "",
+                        message = if (approve) "${row.name} approved" else "${row.name} rejected"
+                    )
+                }
+            } catch (e: CheckInAlreadyDecidedException) {
+                // EX1: someone else decided first; their decision stays
+                val who = e.decidedBy?.let { id -> attendanceRepository.studentName(id) }
+                    ?.takeIf { it.isNotBlank() && it != "Student" } ?: "another organiser"
+                _uiState.update { it.copy(isSaving = false, reviewError = "Already decided by $who") }
+            } catch (e: ReviewNeedsConnectionException) {
+                _uiState.update { it.copy(isSaving = false, reviewError = e.message) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSaving = false, reviewError = "Couldn't save. Check your connection and try again.") }
             }
         }
     }
